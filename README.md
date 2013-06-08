@@ -45,6 +45,20 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ##Endpoints
 
+###Authentication
+
+####* api.generateAuthUrl(client_id, client_secret, redirect_url, scopes=None)
+
+Saves id, secret, redirect for getAuthResponse. First half of server-side web flow.
+This returns a URL. Copy it and open it in a browser. When you authenticate, it will
+take you to the redirect URL with the code attached. Feed that code into getAuthResponse
+and you will have the access token.
+
+####* api.getAuthResponse(code)
+
+Second half of server-side web flow. Use the code obtained from the AuthURL.
+Note that this sets access_token but doesn't save it.
+
 ###user
 ####* api.getUser(user_id) - [Retrieve a User](http://developers.app.net/docs/resources/user/lookup/#retrieve-a-user)
 
