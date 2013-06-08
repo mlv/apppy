@@ -91,10 +91,33 @@ class apppy(ratelimit):
         if access_token:
             self.set_accesstoken(access_token)
 
-    # I can't test this anyway...
-    def generateAuthUrl(self, client_id, client_secret, redirect_url, scope): pass
+    def generateAuthUrl(self, client_id, client_secret, redirect_url, scopes=None):
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.redirect_url = redirect_url
+        
+        url = "https://account.app.net/oauth/authorize?client_id="+\
+            self.client_id + "&response_type=code&redirect_uri=" +\
+            redirect_url + "&scope="
 
-    def getAuthResponse(self, code): pass
+        if scopes == None:
+            scopes = self.allscopes
+
+        url += " ".join(filter(lambda x:x in self.allscopes, scopes))
+        return url
+        
+    def getAuthResponse(self, code):
+        #generate POST request
+        url = "https://alpha.app.net/oauth/access_token"
+        post_data = {'client_id':self.client_id,
+        'client_secret':self.client_secret,
+        'grant_type':'authorization_code',
+        'redirect_uri':self.redirect_url,
+        'code':code}
+
+        r = requests.post(url,data=post_data)
+
+        return r.text
 
     def geturl(self, e, *opts):
         lparam=len(e['url_params'])
@@ -197,7 +220,8 @@ class apppy(ratelimit):
             return r
         return r
     base="https://alpha-api.app.net/stream/0/"
-    parameter_category={u'general_channel': [u'channel_type', u'include_marker', u'include_read', u'include_recent_message', u'include_annotations', u'include_user_annotations', u'include_message_annotations'], u'stream': [u'object_types', u'type', u'filter_id', u'key'], u'post_or_message': [u'text'], u'file_ids': [u'ids'], u'file': [u'text', u'reply_to', u'annotations', u'entities', u'machine_only'], u'marker': [u'id', u'name', u'percentage'], u'message': [u'text', u'reply_to', u'annotations', u'entities', u'machine_only', u'destinations'], u'message_ids': [u'ids'], u'general_message': [u'include_muted', u'include_deleted', u'include_machine', u'include_annotations', u'include_user_annotations', u'include_message_annotations', u'include_html'], u'content': u'content', u'channel': [u'readers', u'writers', u'annotations', u'type'], u'placesearch': [u'latitude', u'longitude', u'q', u'radius', u'count', u'remove_closed', u'altitude', u'horizontal_accuracy', u'vertical_accuracy'], u'channel_ids': [u'ids'], u'user_ids': [u'ids'], u'user': [u'name', u'locale', u'timezone', u'description'], u'post': [u'text', u'reply_to', u'machine_only', u'annotations', u'entities'], u'general_file': [u'file_types', u'include_incomplete', u'include_private', u'include_annotations', u'include_file_annotations', u'include_user_annotations'], u'general_post': [u'include_muted', u'include_deleted', u'include_directed_posts', u'include_machine', u'include_starred_by', u'include_reposters', u'include_annotations', u'include_post_annotations', u'include_user_annotations', u'include_html'], u'pagination': [u'since_id', u'before_id', u'count'], u'general_user': [u'include_annotations', u'include_user_annotations', u'include_html'], u'cover': u'image', u'filter': [u'name', u'match_policy', u'clauses'], u'avatar': u'image', u'post_ids': [u'ids']}
+    parameter_category={u'general_channel': [u'channel_types', u'include_marker', u'include_read', u'include_recent_message', u'include_annotations', u'include_user_annotations', u'include_message_annotations'], u'stream': [u'object_types', u'type', u'filter_id', u'key'], u'post_or_message': [u'text'], u'file_ids': [u'ids'], u'file': [u'text', u'reply_to', u'annotations', u'entities', u'machine_only'], u'marker': [u'id', u'name', u'percentage'], u'message': [u'text', u'reply_to', u'annotations', u'entities', u'machine_only', u'destinations'], u'message_ids': [u'ids'], u'general_message': [u'include_muted', u'include_deleted', u'include_machine', u'include_annotations', u'include_user_annotations', u'include_message_annotations', u'include_html'], u'content': u'content', u'channel': [u'readers', u'writers', u'annotations', u'type'], u'placesearch': [u'latitude', u'longitude', u'q', u'radius', u'count', u'remove_closed', u'altitude', u'horizontal_accuracy', u'vertical_accuracy'], u'channel_ids': [u'ids'], u'user_ids': [u'ids'], u'user': [u'name', u'locale', u'timezone', u'description'], u'post': [u'text', u'reply_to', u'machine_only', u'annotations', u'entities'], u'general_file': [u'file_types', u'include_incomplete', u'include_private', u'include_annotations', u'include_file_annotations', u'include_user_annotations'], u'general_post': [u'include_muted', u'include_deleted', u'include_directed_posts', u'include_machine', u'include_starred_by', u'include_reposters', u'include_annotations', u'include_post_annotations', u'include_user_annotations', u'include_html'], u'pagination': [u'since_id', u'before_id', u'count'], u'general_user': [u'include_annotations', u'include_user_annotations', u'include_html'], u'cover': u'image', u'filter': [u'name', u'match_policy', u'clauses'], u'avatar': u'image', u'post_ids': [u'ids']}
+    allscopes=[u'files', u'update_profile', u'stream', u'messages', u'public_messages', u'export', u'write_post', u'basic', u'follow', u'email']
 
     def getUser(self , user_id, **kargs):
     	"""api.getUser(user_id) - Retrieve a User
