@@ -77,6 +77,14 @@ class apppy(ratelimit):
         self._access_token = None
     access_token = property(get_accesstoken, set_accesstoken, del_accesstoken, "The access token")
 
+    def set_app_accesstoken(self, token):
+        self._app_access_token = token
+    def get_app_accesstoken(self):
+        return self._app_access_token
+    def del_app_accesstoken(self):
+        self._app_access_token = None
+    app_access_token = property(get_app_accesstoken, set_app_accesstoken, del_app_accesstoken, "The app access token")
+
     def set_gimme_429(self, token):
         self._gimme_429 = token
     def get_gimme_429(self):
@@ -86,10 +94,12 @@ class apppy(ratelimit):
     gimme_429 = property(get_gimme_429, set_gimme_429, del_gimme_429,
                          "If true, tell API to return 429 error codes, instead of automaticallyh sleeping")
 
-    def __init__(self, access_token=None):
+    def __init__(self, access_token=None, app_access_token=None):
         self.gimme_429 = False
         if access_token:
             self.set_accesstoken(access_token)
+        if app_access_token:
+            self.set_app_accesstoken(app_access_token)
 
     def generateAuthUrl(self, client_id, client_secret, redirect_url, scopes=None):
         """api.generateAuthUrl(client_id, client_secret, redirect_url, scopes=None)
@@ -131,6 +141,23 @@ Note that this sets access_token but doesn't save it."""
         self.access_token = r['access_token']
         return r
 
+    # App Access Token Flow
+    def getAppAccessToken(self, client_id, client_secret):
+        params={'client_id'    : client_id,
+                'client_secret': client_secret,
+                'grant_type'   : 'client_credentials'}
+        url='https://account.app.net/oauth/access_token'
+
+#        for k in params:
+#            url=url+"&{0}={1}".format(k,params[k])
+        print url
+        r=requests.post(url, data=params)
+        if r.status_code <> 200:
+            print r.text
+        r.raise_for_status()
+        d=r.json()
+        return d['access_token']
+        
     def geturl(self, e, *opts):
         lparam=len(e['url_params'])
         assert len(opts) >= lparam
@@ -198,8 +225,12 @@ Note that this sets access_token but doesn't save it."""
         for k in params:
             rp[k] = params[k]
             
-        #print params
-        if self.access_token:
+        # If the endpoint calls for the App access token, use that.
+        # Otherwise, use the access token (even if it calls for None).
+        # Reason: some endpoints (like getUser("me")) use the access_token
+        if ep_data['token'] == 'App':
+            rp['headers']['Authorization'] = "Bearer " + self.app_access_token
+        elif self.access_token:
             rp['headers']['Authorization'] = "Bearer " + self.access_token
         
         call = self.calls[ep_data['method']]
