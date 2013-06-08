@@ -92,6 +92,12 @@ class apppy(ratelimit):
             self.set_accesstoken(access_token)
 
     def generateAuthUrl(self, client_id, client_secret, redirect_url, scopes=None):
+        """api.generateAuthUrl(client_id, client_secret, redirect_url, scopes=None)
+
+Saves id, secret, redirect for getAuthResponse. First half of server-side web flow.
+This returns a URL. Copy it and open it in a browser. When you authenticate, it will
+take you to the redirect URL with the code attached. Feed that code into getAuthResponse
+and you will have the access token."""
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_url = redirect_url
@@ -107,6 +113,10 @@ class apppy(ratelimit):
         return url
         
     def getAuthResponse(self, code):
+        """api.getAuthResponse(code)
+
+Second half of server-side web flow. Use the code obtained from the AuthURL.
+Note that this sets access_token but doesn't save it."""
         #generate POST request
         url = "https://alpha.app.net/oauth/access_token"
         post_data = {'client_id':self.client_id,
@@ -116,13 +126,14 @@ class apppy(ratelimit):
         'code':code}
 
         r = requests.post(url,data=post_data)
-
-        return r.text
+        r.raise_for_status()
+        r=r.json()
+        self.access_token = r['access_token']
+        return r
 
     def geturl(self, e, *opts):
         lparam=len(e['url_params'])
-        if len(opts) < lparam:
-            raise
+        assert len(opts) >= lparam
         url=self.base+"".join(sum(itertools.izip_longest(e['url'], opts[:lparam], fillvalue=''), ()))
     	return url
     
