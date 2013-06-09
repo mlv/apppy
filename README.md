@@ -4,12 +4,12 @@ An endpoint-complete app.net library.
 
 ##To use
 
-It currently requires that you already have an access token.
+You can use an already-existing access token, or use your client id / secret to get one.
 
 ```python
 from apppy import *
 
-api = apppy(access_token="...")
+api = apppy(access_token="...", app_access_token="...")
 
 r=api.getUser("me")
 assert r.json()['data']['username'] == username
@@ -26,7 +26,7 @@ api.gimme_429 = True
 ```
 will let you catch 429 (rate limit) errors. 
 
-Apppy.py is machine generated. It uses [Duerig's endpoints.json library](https://github.com/duerig/appnet.js/blob/master/hbs/endpoints.json) to generate all the endpoints. The code that generates the endpoints is not part 
+Apppy.py is machine generated. It uses [@Duerig's endpoints.json library](https://github.com/duerig/appnet.js/blob/master/hbs/endpoints.json) to generate all the endpoints. The code that generates the endpoints is not part 
 of this distribution, so while I will work hard to fix any problems, I won't accept pull requests against 
 apppy.py (but I will use them to correct the source files that generate apppy.py). This file is also machine 
 generated.
@@ -59,6 +59,9 @@ and you will have the access token.
 Second half of server-side web flow. Use the code obtained from the AuthURL.
 Note that this sets access_token but doesn't save it.
 
+####* api.getAppAccessToken(client_id, client_secret)
+
+Obtains and returns an app access token.
 ###user
 ####* api.getUser(user_id) - [Retrieve a User](http://developers.app.net/docs/resources/user/lookup/#retrieve-a-user)
 
