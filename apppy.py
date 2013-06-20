@@ -65,7 +65,7 @@ Method:setlimit(r): get the rate limit parameters from the response header and s
             self._gremaining = remaining
 
 class apppy(ratelimit):
-    """ Usage: apppy(access_token=None)"""
+    """ Usage: apppy(access_token=None, api_access_token=None)"""
     
     public_api_anchor = "alpha-api.app.net"
 
@@ -157,6 +157,12 @@ Note that this sets access_token but doesn't save it."""
         r.raise_for_status()
         d=r.json()
         return d['access_token']
+
+    def createUserStream(self, connection_id=None, timeout=None):
+        h={"Authorization": "BEARER "+self.access_token}
+        r=requests.get("https://stream-channel.app.net/stream/user", stream=True, headers=h, timeout=None)
+        return r
+    
         
     def geturl(self, e, *opts):
         lparam=len(e['url_params'])
@@ -262,7 +268,7 @@ Note that this sets access_token but doesn't save it."""
             return r
         return r
     base="https://alpha-api.app.net/stream/0/"
-    parameter_category={u'general_channel': [u'channel_types', u'include_marker', u'include_read', u'include_recent_message', u'include_annotations', u'include_user_annotations', u'include_message_annotations'], u'stream': [u'object_types', u'type', u'filter_id', u'key'], u'post_or_message': [u'text'], u'file_ids': [u'ids'], u'file': [u'text', u'reply_to', u'annotations', u'entities', u'machine_only'], u'marker': [u'id', u'name', u'percentage'], u'message': [u'text', u'reply_to', u'annotations', u'entities', u'machine_only', u'destinations'], u'message_ids': [u'ids'], u'general_message': [u'include_muted', u'include_deleted', u'include_machine', u'include_annotations', u'include_user_annotations', u'include_message_annotations', u'include_html'], u'content': u'content', u'channel': [u'readers', u'writers', u'annotations', u'type'], u'placesearch': [u'latitude', u'longitude', u'q', u'radius', u'count', u'remove_closed', u'altitude', u'horizontal_accuracy', u'vertical_accuracy'], u'channel_ids': [u'ids'], u'user_ids': [u'ids'], u'user': [u'name', u'locale', u'timezone', u'description'], u'post': [u'text', u'reply_to', u'machine_only', u'annotations', u'entities'], u'general_file': [u'file_types', u'include_incomplete', u'include_private', u'include_annotations', u'include_file_annotations', u'include_user_annotations'], u'general_post': [u'include_muted', u'include_deleted', u'include_directed_posts', u'include_machine', u'include_starred_by', u'include_reposters', u'include_annotations', u'include_post_annotations', u'include_user_annotations', u'include_html'], u'pagination': [u'since_id', u'before_id', u'count'], u'general_user': [u'include_annotations', u'include_user_annotations', u'include_html'], u'cover': u'image', u'filter': [u'name', u'match_policy', u'clauses'], u'avatar': u'image', u'post_ids': [u'ids']}
+    parameter_category={u'general_channel': [u'channel_types', u'include_marker', u'include_read', u'include_recent_message', u'include_annotations', u'include_user_annotations', u'include_message_annotations', u'connection_id'], u'post_or_message': [u'text'], u'file_ids': [u'ids'], u'file': [u'kind', u'type', u'name', u'public', u'annotations'], u'marker': [u'id', u'name', u'percentage'], u'message': [u'text', u'reply_to', u'annotations', u'entities', u'machine_only', u'destinations'], u'message_ids': [u'ids'], u'UserStream': [], u'content': u'content', u'channel': [u'readers', u'writers', u'annotations', u'type'], u'placesearch': [u'latitude', u'longitude', u'q', u'radius', u'count', u'remove_closed', u'altitude', u'horizontal_accuracy', u'vertical_accuracy'], u'channel_ids': [u'ids'], u'user_ids': [u'ids'], u'general_message': [u'include_muted', u'include_deleted', u'include_machine', u'include_annotations', u'include_user_annotations', u'include_message_annotations', u'include_html', u'connection_id'], u'user': [u'name', u'locale', u'timezone', u'description'], u'AppStream': [u'object_types', u'type', u'filter_id', u'key'], u'post': [u'text', u'reply_to', u'machine_only', u'annotations', u'entities'], u'general_file': [u'file_types', u'include_incomplete', u'include_private', u'include_annotations', u'include_file_annotations', u'include_user_annotations', u'connection_id'], u'general_post': [u'include_muted', u'include_deleted', u'include_directed_posts', u'include_machine', u'include_starred_by', u'include_reposters', u'include_annotations', u'include_post_annotations', u'include_user_annotations', u'include_html', u'connection_id'], u'pagination': [u'since_id', u'before_id', u'count'], u'general_user': [u'include_annotations', u'include_user_annotations', u'include_html', u'connection_id'], u'cover': u'image', u'filter': [u'name', u'match_policy', u'clauses'], u'avatar': u'image', u'post_ids': [u'ids']}
     allscopes=[u'files', u'update_profile', u'stream', u'messages', u'public_messages', u'export', u'write_post', u'basic', u'follow', u'email']
 
     def getUser(self , user_id, **kargs):
@@ -577,11 +583,11 @@ Note that this sets access_token but doesn't save it."""
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
-    def getUnifiedStreamStream(self , **kargs):
-    	"""api.getUnifiedStreamStream() - Retrieve a User's unified stream
+    def getUnifiedStreamPost(self , **kargs):
+    	"""api.getUnifiedStreamPost() - Retrieve a User's unified stream
         
         http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-unified-stream"""
-        ep={u'url_params': [], u'group': u'stream', u'name': u'getUnifiedStream', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-unified-stream', u'url': [u'posts/stream/unified'], u'scope': u'stream', u'id': u'214', u'description': u"Retrieve a User's unified stream"}
+        ep={u'url_params': [], u'group': u'post', u'name': u'getUnifiedStream', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-unified-stream', u'url': [u'posts/stream/unified'], u'scope': u'stream', u'id': u'214', u'description': u"Retrieve a User's unified stream"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -841,59 +847,75 @@ Note that this sets access_token but doesn't save it."""
         url=self.geturl(ep , file_id)
         return self.genRequest(url, ep, kargs)
 
-    def createStream(self , **kargs):
-    	"""api.createStream() - Create a Stream
+    def createAppStream(self , **kargs):
+    	"""api.createAppStream() - Create a Stream
         
         http://developers.app.net/docs/resources/stream/lifecycle/#create-a-stream"""
-        ep={u'url_params': [], u'group': u'stream', u'name': u'create', u'array_params': [], u'data_params': [u'stream'], u'get_params': [], u'method': u'POST', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#create-a-stream', u'url': [u'streams'], u'scope': u'basic', u'id': u'600', u'description': u'Create a Stream'}
+        ep={u'url_params': [], u'group': u'AppStream', u'name': u'create', u'array_params': [], u'data_params': [u'stream'], u'get_params': [], u'method': u'POST', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#create-a-stream', u'url': [u'streams'], u'scope': u'basic', u'id': u'600', u'description': u'Create a Stream'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
-    def getStream(self , stream_id, **kargs):
-    	"""api.getStream(stream_id) - Retrieve a Stream
+    def getAppStream(self , stream_id, **kargs):
+    	"""api.getAppStream(stream_id) - Retrieve a Stream
         
         http://developers.app.net/docs/resources/stream/lifecycle/#retrieve-a-stream"""
-        ep={u'url_params': [u'stream_id'], u'group': u'stream', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#retrieve-a-stream', u'url': [u'streams/'], u'scope': u'basic', u'id': u'601', u'description': u'Retrieve a Stream'}
+        ep={u'url_params': [u'stream_id'], u'group': u'AppStream', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#retrieve-a-stream', u'url': [u'streams/'], u'scope': u'basic', u'id': u'601', u'description': u'Retrieve a Stream'}
         url=self.geturl(ep , stream_id)
         return self.genRequest(url, ep, kargs)
 
-    def updateStream(self , stream_id, **kargs):
-    	"""api.updateStream(stream_id) - Update a Stream
+    def updateAppStream(self , stream_id, **kargs):
+    	"""api.updateAppStream(stream_id) - Update a Stream
         
         http://developers.app.net/docs/resources/stream/lifecycle/#update-a-stream"""
-        ep={u'url_params': [u'stream_id'], u'group': u'stream', u'name': u'update', u'array_params': [], u'data_params': [u'stream'], u'get_params': [], u'method': u'PUT', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#update-a-stream', u'url': [u'streams/'], u'scope': u'basic', u'id': u'602', u'description': u'Update a Stream'}
+        ep={u'url_params': [u'stream_id'], u'group': u'AppStream', u'name': u'update', u'array_params': [], u'data_params': [u'stream'], u'get_params': [], u'method': u'PUT', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#update-a-stream', u'url': [u'streams/'], u'scope': u'basic', u'id': u'602', u'description': u'Update a Stream'}
         url=self.geturl(ep , stream_id)
         return self.genRequest(url, ep, kargs)
 
-    def destroyStream(self , stream_id, **kargs):
-    	"""api.destroyStream(stream_id) - Delete a Stream
+    def destroyAppStream(self , stream_id, **kargs):
+    	"""api.destroyAppStream(stream_id) - Delete a Stream
         
         http://developers.app.net/docs/resources/stream/lifecycle/#delete-a-stream"""
-        ep={u'url_params': [u'stream_id'], u'group': u'stream', u'name': u'destroy', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#delete-a-stream', u'url': [u'streams/'], u'scope': u'basic', u'id': u'603', u'description': u'Delete a Stream'}
+        ep={u'url_params': [u'stream_id'], u'group': u'AppStream', u'name': u'destroy', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#delete-a-stream', u'url': [u'streams/'], u'scope': u'basic', u'id': u'603', u'description': u'Delete a Stream'}
         url=self.geturl(ep , stream_id)
         return self.genRequest(url, ep, kargs)
 
-    def getAllStream(self , **kargs):
-    	"""api.getAllStream() - Retrieve all Streams for the current Token
+    def getAllAppStream(self , **kargs):
+    	"""api.getAllAppStream() - Retrieve all Streams for the current Token
         
         http://developers.app.net/docs/resources/stream/lifecycle/#get-current-tokens-streams"""
-        ep={u'url_params': [], u'group': u'stream', u'name': u'getAll', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#get-current-tokens-streams', u'url': [u'streams'], u'scope': u'basic', u'id': u'604', u'description': u'Retrieve all Streams for the current Token'}
+        ep={u'url_params': [], u'group': u'AppStream', u'name': u'getAll', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#get-current-tokens-streams', u'url': [u'streams'], u'scope': u'basic', u'id': u'604', u'description': u'Retrieve all Streams for the current Token'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
-    def destroyAllStream(self , **kargs):
-    	"""api.destroyAllStream() - Delete all Streams for the current Token
+    def destroyAllAppStream(self , **kargs):
+    	"""api.destroyAllAppStream() - Delete all Streams for the current Token
         
         http://developers.app.net/docs/resources/stream/lifecycle/#delete-all-of-the-current-users-streams"""
-        ep={u'url_params': [], u'group': u'stream', u'name': u'destroyAll', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#delete-all-of-the-current-users-streams', u'url': [u'streams'], u'scope': u'basic', u'id': u'605', u'description': u'Delete all Streams for the current Token'}
+        ep={u'url_params': [], u'group': u'AppStream', u'name': u'destroyAll', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#delete-all-of-the-current-users-streams', u'url': [u'streams'], u'scope': u'basic', u'id': u'605', u'description': u'Delete all Streams for the current Token'}
         url=self.geturl(ep )
+        return self.genRequest(url, ep, kargs)
+
+    def destroyUserStream(self , connection_id, **kargs):
+    	"""api.destroyUserStream(connection_id) - Delete a User Stream
+        
+        http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream"""
+        ep={u'url_params': [u'connection_id'], u'group': u'UserStream', u'name': u'destroy', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'user', u'link': u'http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream', u'url': [u'streams/me/streams/'], u'scope': u'basic', u'id': u'700', u'description': u'Delete a User Stream'}
+        url=self.geturl(ep , connection_id)
+        return self.genRequest(url, ep, kargs)
+
+    def destroySubscriptionUserStream(self , connection_id, subscription_id, **kargs):
+    	"""api.destroySubscriptionUserStream(connection_id, subscription_id) - Delete a User Stream Subscription
+        
+        http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream-subscription"""
+        ep={u'url_params': [u'connection_id', u'subscription_id'], u'group': u'UserStream', u'name': u'destroySubscription', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'user', u'link': u'http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream-subscription', u'url': [u'streams/me/streams/'], u'scope': u'basic', u'id': u'701', u'description': u'Delete a User Stream Subscription'}
+        url=self.geturl(ep , connection_id, subscription_id)
         return self.genRequest(url, ep, kargs)
 
     def createFilter(self , **kargs):
     	"""api.createFilter() - Create a Filter
         
         http://developers.app.net/docs/resources/filter/lifecycle/#create-a-filter"""
-        ep={u'url_params': [], u'group': u'filter', u'name': u'create', u'array_params': [], u'data_params': [u'filter'], u'get_params': [], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#create-a-filter', u'url': [u'filters'], u'scope': u'basic', u'id': u'700', u'description': u'Create a Filter'}
+        ep={u'url_params': [], u'group': u'filter', u'name': u'create', u'array_params': [], u'data_params': [u'filter'], u'get_params': [], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#create-a-filter', u'url': [u'filters'], u'scope': u'basic', u'id': u'800', u'description': u'Create a Filter'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -901,7 +923,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.getFilter(filter_id) - Retrieve a Filter
         
         http://developers.app.net/docs/resources/filter/lifecycle/#retrieve-a-filter"""
-        ep={u'url_params': [u'filter_id'], u'group': u'filter', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#retrieve-a-filter', u'url': [u'filters/'], u'scope': u'basic', u'id': u'701', u'description': u'Retrieve a Filter'}
+        ep={u'url_params': [u'filter_id'], u'group': u'filter', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#retrieve-a-filter', u'url': [u'filters/'], u'scope': u'basic', u'id': u'801', u'description': u'Retrieve a Filter'}
         url=self.geturl(ep , filter_id)
         return self.genRequest(url, ep, kargs)
 
@@ -909,7 +931,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.updateFilter(filter_id) - Update a Filter
         
         http://developers.app.net/docs/resources/filter/lifecycle/#update-a-filter"""
-        ep={u'url_params': [u'filter_id'], u'group': u'filter', u'name': u'update', u'array_params': [], u'data_params': [u'filter'], u'get_params': [], u'method': u'PUT', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#update-a-filter', u'url': [u'filters/'], u'scope': u'basic', u'id': u'702', u'description': u'Update a Filter'}
+        ep={u'url_params': [u'filter_id'], u'group': u'filter', u'name': u'update', u'array_params': [], u'data_params': [u'filter'], u'get_params': [], u'method': u'PUT', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#update-a-filter', u'url': [u'filters/'], u'scope': u'basic', u'id': u'802', u'description': u'Update a Filter'}
         url=self.geturl(ep , filter_id)
         return self.genRequest(url, ep, kargs)
 
@@ -917,7 +939,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.destroyFilter(filter_id) - Delete a Filter
         
         http://developers.app.net/docs/resources/filter/lifecycle/#delete-a-filter"""
-        ep={u'url_params': [u'filter_id'], u'group': u'filter', u'name': u'destroy', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#delete-a-filter', u'url': [u'filters/'], u'scope': u'basic', u'id': u'703', u'description': u'Delete a Filter'}
+        ep={u'url_params': [u'filter_id'], u'group': u'filter', u'name': u'destroy', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#delete-a-filter', u'url': [u'filters/'], u'scope': u'basic', u'id': u'803', u'description': u'Delete a Filter'}
         url=self.geturl(ep , filter_id)
         return self.genRequest(url, ep, kargs)
 
@@ -925,7 +947,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.getUserFilter() - Get the current User's Filters
         
         http://developers.app.net/docs/resources/filter/lifecycle/#get-current-users-filters"""
-        ep={u'url_params': [], u'group': u'filter', u'name': u'getUser', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#get-current-users-filters', u'url': [u'filters'], u'scope': u'basic', u'id': u'704', u'description': u"Get the current User's Filters"}
+        ep={u'url_params': [], u'group': u'filter', u'name': u'getUser', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#get-current-users-filters', u'url': [u'filters'], u'scope': u'basic', u'id': u'804', u'description': u"Get the current User's Filters"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -933,7 +955,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.destroyUserFilter() - Delete the current User's Filters
         
         http://developers.app.net/docs/resources/filter/lifecycle/#delete-all-of-the-current-users-filters"""
-        ep={u'url_params': [], u'group': u'filter', u'name': u'destroyUser', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#delete-all-of-the-current-users-filters', u'url': [u'filters'], u'scope': u'basic', u'id': u'705', u'description': u"Delete the current User's Filters"}
+        ep={u'url_params': [], u'group': u'filter', u'name': u'destroyUser', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#delete-all-of-the-current-users-filters', u'url': [u'filters'], u'scope': u'basic', u'id': u'805', u'description': u"Delete the current User's Filters"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -941,7 +963,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.getInteraction() - Retrieve Interactions with the current User
         
         http://developers.app.net/docs/resources/interaction/"""
-        ep={u'url_params': [], u'group': u'interaction', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'pagination'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/interaction/', u'url': [u'users/me/interactions'], u'scope': u'basic', u'id': u'800', u'description': u'Retrieve Interactions with the current User'}
+        ep={u'url_params': [], u'group': u'interaction', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'pagination'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/interaction/', u'url': [u'users/me/interactions'], u'scope': u'basic', u'id': u'900', u'description': u'Retrieve Interactions with the current User'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -949,7 +971,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.updateMarker() - Update a Stream Marker
         
         http://developers.app.net/docs/resources/stream-marker/#update-a-stream-marker"""
-        ep={u'url_params': [], u'group': u'marker', u'name': u'update', u'array_params': [], u'data_params': [u'marker'], u'get_params': [], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/stream-marker/#update-a-stream-marker', u'url': [u'posts/marker'], u'scope': u'basic', u'id': u'900', u'description': u'Update a Stream Marker'}
+        ep={u'url_params': [], u'group': u'marker', u'name': u'update', u'array_params': [], u'data_params': [u'marker'], u'get_params': [], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/stream-marker/#update-a-stream-marker', u'url': [u'posts/marker'], u'scope': u'basic', u'id': u'1000', u'description': u'Update a Stream Marker'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -957,7 +979,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.processText() - Process text
         
         http://developers.app.net/docs/resources/text-processor/"""
-        ep={u'url_params': [], u'group': u'text', u'name': u'process', u'array_params': [], u'data_params': [u'post_or_message'], u'get_params': [], u'method': u'POST', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/text-processor/', u'url': [u'text/process'], u'scope': u'basic', u'id': u'1000', u'description': u'Process text'}
+        ep={u'url_params': [], u'group': u'text', u'name': u'process', u'array_params': [], u'data_params': [u'post_or_message'], u'get_params': [], u'method': u'POST', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/text-processor/', u'url': [u'text/process'], u'scope': u'basic', u'id': u'1100', u'description': u'Process text'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -965,7 +987,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.getToken() - Retrieve the current token
         
         http://developers.app.net/docs/resources/token/#retrieve-current-token"""
-        ep={u'url_params': [], u'group': u'token', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/token/#retrieve-current-token', u'url': [u'token'], u'scope': u'basic', u'id': u'1100', u'description': u'Retrieve the current token'}
+        ep={u'url_params': [], u'group': u'token', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/token/#retrieve-current-token', u'url': [u'token'], u'scope': u'basic', u'id': u'1200', u'description': u'Retrieve the current token'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -973,7 +995,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.getAuthorizedIdsToken() - Retrieve authorized User IDs for an app
         
         http://developers.app.net/docs/resources/token/#retrieve-authorized-user-ids-for-an-app"""
-        ep={u'url_params': [], u'group': u'token', u'name': u'getAuthorizedIds', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/token/#retrieve-authorized-user-ids-for-an-app', u'url': [u'tokens/user_ids'], u'scope': u'basic', u'id': u'1101', u'description': u'Retrieve authorized User IDs for an app'}
+        ep={u'url_params': [], u'group': u'token', u'name': u'getAuthorizedIds', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/token/#retrieve-authorized-user-ids-for-an-app', u'url': [u'tokens/user_ids'], u'scope': u'basic', u'id': u'1201', u'description': u'Retrieve authorized User IDs for an app'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -981,7 +1003,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.getAuthorizedToken() - Retrieve authorized User tokens for an app
         
         http://developers.app.net/docs/resources/token/#retrieve-authorized-user-tokens-for-an-app"""
-        ep={u'url_params': [], u'group': u'token', u'name': u'getAuthorized', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/token/#retrieve-authorized-user-tokens-for-an-app', u'url': [u'apps/me/token'], u'scope': u'basic', u'id': u'1102', u'description': u'Retrieve authorized User tokens for an app'}
+        ep={u'url_params': [], u'group': u'token', u'name': u'getAuthorized', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/token/#retrieve-authorized-user-tokens-for-an-app', u'url': [u'apps/me/token'], u'scope': u'basic', u'id': u'1202', u'description': u'Retrieve authorized User tokens for an app'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -989,7 +1011,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.getPlace(factual_id) - Retrieve a Place
         
         http://developers.app.net/docs/resources/place/#retrieve-a-place"""
-        ep={u'url_params': [u'factual_id'], u'group': u'place', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/place/#retrieve-a-place', u'url': [u'places/'], u'scope': u'basic', u'id': u'1200', u'description': u'Retrieve a Place'}
+        ep={u'url_params': [u'factual_id'], u'group': u'place', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/place/#retrieve-a-place', u'url': [u'places/'], u'scope': u'basic', u'id': u'1300', u'description': u'Retrieve a Place'}
         url=self.geturl(ep , factual_id)
         return self.genRequest(url, ep, kargs)
 
@@ -997,7 +1019,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.searchPlace() - Search for Places
         
         http://developers.app.net/docs/resources/place/#search-for-a-place"""
-        ep={u'url_params': [], u'group': u'place', u'name': u'search', u'array_params': [], u'data_params': [], u'get_params': [u'placesearch'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/place/#search-for-a-place', u'url': [u'places/search'], u'scope': u'basic', u'id': u'1201', u'description': u'Search for Places'}
+        ep={u'url_params': [], u'group': u'place', u'name': u'search', u'array_params': [], u'data_params': [], u'get_params': [u'placesearch'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/place/#search-for-a-place', u'url': [u'places/search'], u'scope': u'basic', u'id': u'1301', u'description': u'Search for Places'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -1005,7 +1027,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.showExplore() - Retrieve all Explore Streams
         
         http://developers.app.net/docs/resources/explore/#retrieve-all-explore-streams"""
-        ep={u'url_params': [], u'group': u'explore', u'name': u'show', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/explore/#retrieve-all-explore-streams', u'url': [u'posts/stream/explore'], u'scope': u'basic', u'id': u'1300', u'description': u'Retrieve all Explore Streams'}
+        ep={u'url_params': [], u'group': u'explore', u'name': u'show', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/explore/#retrieve-all-explore-streams', u'url': [u'posts/stream/explore'], u'scope': u'basic', u'id': u'1400', u'description': u'Retrieve all Explore Streams'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -1013,6 +1035,6 @@ Note that this sets access_token but doesn't save it."""
     	"""api.getExplore(slug) - Retrieve an Explore Stream
         
         http://developers.app.net/docs/resources/explore/#retrieve-an-explore-stream"""
-        ep={u'url_params': [u'slug'], u'group': u'explore', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'pagination'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/explore/#retrieve-an-explore-stream', u'url': [u'stream/explore/'], u'scope': u'basic', u'id': u'1301', u'description': u'Retrieve an Explore Stream'}
+        ep={u'url_params': [u'slug'], u'group': u'explore', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'pagination'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/explore/#retrieve-an-explore-stream', u'url': [u'stream/explore/'], u'scope': u'basic', u'id': u'1401', u'description': u'Retrieve an Explore Stream'}
         url=self.geturl(ep , slug)
         return self.genRequest(url, ep, kargs)

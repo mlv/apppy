@@ -95,9 +95,9 @@ Obtains and returns an app access token.
 ####* api.getThreadPost(post_id) - [Retrieve replies to a Post](http://developers.app.net/docs/resources/post/replies)
 
 ####* api.getUserStreamPost() - [Retrieve a User's personalized stream](http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-personalized-stream)
-###stream
-####* api.getUnifiedStreamStream() - [Retrieve a User's unified stream](http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-unified-stream)
-###post
+
+####* api.getUnifiedStreamPost() - [Retrieve a User's unified stream](http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-unified-stream)
+
 ####* api.getGlobalPost() - [Retrieve the Global stream](http://developers.app.net/docs/resources/post/streams/#retrieve-the-global-stream)
 
 ####* api.reportPost(post_id) - [Report a Post](http://developers.app.net/docs/resources/post/report/#report-a-post)
@@ -161,18 +161,22 @@ Obtains and returns an app access token.
 ####* api.getContentFile(file_id) - [Get File content](http://developers.app.net/docs/resources/file/content/#get-file-content)
 
 ####* api.setContentFile(file_id) - [Set File content](http://developers.app.net/docs/resources/file/content/#set-file-content)
-###stream
-####* api.createStream() - [Create a Stream](http://developers.app.net/docs/resources/stream/lifecycle/#create-a-stream)
+###AppStream
+####* api.createAppStream() - [Create a Stream](http://developers.app.net/docs/resources/stream/lifecycle/#create-a-stream)
 
-####* api.getStream(stream_id) - [Retrieve a Stream](http://developers.app.net/docs/resources/stream/lifecycle/#retrieve-a-stream)
+####* api.getAppStream(stream_id) - [Retrieve a Stream](http://developers.app.net/docs/resources/stream/lifecycle/#retrieve-a-stream)
 
-####* api.updateStream(stream_id) - [Update a Stream](http://developers.app.net/docs/resources/stream/lifecycle/#update-a-stream)
+####* api.updateAppStream(stream_id) - [Update a Stream](http://developers.app.net/docs/resources/stream/lifecycle/#update-a-stream)
 
-####* api.destroyStream(stream_id) - [Delete a Stream](http://developers.app.net/docs/resources/stream/lifecycle/#delete-a-stream)
+####* api.destroyAppStream(stream_id) - [Delete a Stream](http://developers.app.net/docs/resources/stream/lifecycle/#delete-a-stream)
 
-####* api.getAllStream() - [Retrieve all Streams for the current Token](http://developers.app.net/docs/resources/stream/lifecycle/#get-current-tokens-streams)
+####* api.getAllAppStream() - [Retrieve all Streams for the current Token](http://developers.app.net/docs/resources/stream/lifecycle/#get-current-tokens-streams)
 
-####* api.destroyAllStream() - [Delete all Streams for the current Token](http://developers.app.net/docs/resources/stream/lifecycle/#delete-all-of-the-current-users-streams)
+####* api.destroyAllAppStream() - [Delete all Streams for the current Token](http://developers.app.net/docs/resources/stream/lifecycle/#delete-all-of-the-current-users-streams)
+###UserStream
+####* api.destroyUserStream(connection_id) - [Delete a User Stream](http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream)
+
+####* api.destroySubscriptionUserStream(connection_id, subscription_id) - [Delete a User Stream Subscription](http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream-subscription)
 ###filter
 ####* api.createFilter() - [Create a Filter](http://developers.app.net/docs/resources/filter/lifecycle/#create-a-filter)
 
