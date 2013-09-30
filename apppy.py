@@ -268,7 +268,7 @@ Note that this sets access_token but doesn't save it."""
             return r
         return r
     base="https://alpha-api.app.net/stream/0/"
-    parameter_category={u'general_channel': [u'channel_types', u'include_marker', u'include_read', u'include_recent_message', u'include_annotations', u'include_user_annotations', u'include_message_annotations', u'connection_id'], u'post_or_message': [u'text'], u'file_ids': [u'ids'], u'file': [u'kind', u'type', u'name', u'public', u'annotations'], u'marker': [u'id', u'name', u'percentage'], u'message': [u'text', u'reply_to', u'annotations', u'entities', u'machine_only', u'destinations'], u'message_ids': [u'ids'], u'UserStream': [], u'content': u'content', u'channel': [u'readers', u'writers', u'annotations', u'type'], u'placesearch': [u'latitude', u'longitude', u'q', u'radius', u'count', u'remove_closed', u'altitude', u'horizontal_accuracy', u'vertical_accuracy'], u'channel_ids': [u'ids'], u'user_ids': [u'ids'], u'general_message': [u'include_muted', u'include_deleted', u'include_machine', u'include_annotations', u'include_user_annotations', u'include_message_annotations', u'include_html', u'connection_id'], u'user': [u'name', u'locale', u'timezone', u'description'], u'AppStream': [u'object_types', u'type', u'filter_id', u'key'], u'post': [u'text', u'reply_to', u'machine_only', u'annotations', u'entities'], u'general_file': [u'file_types', u'include_incomplete', u'include_private', u'include_annotations', u'include_file_annotations', u'include_user_annotations', u'connection_id'], u'general_post': [u'include_muted', u'include_deleted', u'include_directed_posts', u'include_machine', u'include_starred_by', u'include_reposters', u'include_annotations', u'include_post_annotations', u'include_user_annotations', u'include_html', u'connection_id'], u'pagination': [u'since_id', u'before_id', u'count'], u'general_user': [u'include_annotations', u'include_user_annotations', u'include_html', u'connection_id'], u'cover': u'image', u'filter': [u'name', u'match_policy', u'clauses'], u'avatar': u'image', u'post_ids': [u'ids']}
+    parameter_category={u'general_channel': [u'channel_types', u'include_marker', u'include_read', u'include_recent_message', u'include_annotations', u'include_user_annotations', u'include_message_annotations', u'connection_id'], u'post_or_message': [u'text'], u'file_ids': [u'ids'], u'file': [u'kind', u'type', u'name', u'public', u'annotations'], u'marker': [u'id', u'name', u'percentage'], u'message': [u'text', u'reply_to', u'annotations', u'entities', u'machine_only', u'destinations'], u'message_ids': [u'ids'], u'UserStream': [], u'post_search': [u'index', u'order', u'query', u'text', u'hashtags', u'links', u'link_domains', u'mentions', u'leading_mentions', u'annotation_types', u'attachment_types', u'crosspost_url', u'crosspost_domain', u'place_id', u'is_reply', u'is_directed', u'has_location', u'has_checkin', u'is_crosspost', u'has_attachment', u'has_oembed_photo', u'has_oembed_video', u'has_oembed_html5video', u'has_oembed_rich', u'language', u'client_id', u'creator_id', u'reply_to', u'thread_id'], u'content': u'content', u'place_search': [u'latitude', u'longitude', u'q', u'radius', u'count', u'remove_closed', u'altitude', u'horizontal_accuracy', u'vertical_accuracy'], u'channel': [u'readers', u'writers', u'annotations', u'type'], u'avatar': u'image', u'channel_ids': [u'ids'], u'cover': u'image', u'user_ids': [u'ids'], u'user_search': [u'q', u'count'], u'user': [u'name', u'locale', u'timezone', u'description'], u'AppStream': [u'object_types', u'type', u'filter_id', u'key'], u'post': [u'text', u'reply_to', u'machine_only', u'annotations', u'entities'], u'general_file': [u'file_types', u'include_incomplete', u'include_private', u'include_annotations', u'include_file_annotations', u'include_user_annotations', u'connection_id'], u'general_post': [u'include_muted', u'include_deleted', u'include_directed_posts', u'include_machine', u'include_starred_by', u'include_reposters', u'include_annotations', u'include_post_annotations', u'include_user_annotations', u'include_html', u'connection_id'], u'pagination': [u'since_id', u'before_id', u'count'], u'general_user': [u'include_annotations', u'include_user_annotations', u'include_html', u'connection_id'], u'stream_facet': [u'has_oembed_photo'], u'filter': [u'name', u'match_policy', u'clauses'], u'general_message': [u'include_muted', u'include_deleted', u'include_machine', u'include_annotations', u'include_user_annotations', u'include_message_annotations', u'include_html', u'connection_id'], u'post_ids': [u'ids'], u'channel_search': [u'order', u'q', u'type', u'creator_id', u'tags']}
     allscopes=[u'files', u'update_profile', u'stream', u'messages', u'public_messages', u'export', u'write_post', u'basic', u'follow', u'email']
 
     def getUser(self , user_id, **kargs):
@@ -387,7 +387,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.searchUser() - Search for Users
         
         http://developers.app.net/docs/resources/user/lookup/#search-for-users"""
-        ep={u'url_params': [], u'group': u'user', u'name': u'search', u'array_params': [], u'data_params': [], u'get_params': [u'general_user'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/user/lookup/#search-for-users', u'url': [u'users/search'], u'scope': u'basic', u'id': u'113', u'description': u'Search for Users'}
+        ep={u'url_params': [], u'group': u'user', u'name': u'search', u'array_params': [], u'data_params': [], u'get_params': [u'user_search', u'general_user'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/user/lookup/#search-for-users', u'url': [u'users/search'], u'scope': u'basic', u'id': u'113', u'description': u'Search for Users'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -579,7 +579,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.getUserStreamPost() - Retrieve a User's personalized stream
         
         http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-personalized-stream"""
-        ep={u'url_params': [], u'group': u'post', u'name': u'getUserStream', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-personalized-stream', u'url': [u'posts/stream'], u'scope': u'stream', u'id': u'213', u'description': u"Retrieve a User's personalized stream"}
+        ep={u'url_params': [], u'group': u'post', u'name': u'getUserStream', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination', u'stream_facet'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-personalized-stream', u'url': [u'posts/stream'], u'scope': u'stream', u'id': u'213', u'description': u"Retrieve a User's personalized stream"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -587,7 +587,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.getUnifiedStreamPost() - Retrieve a User's unified stream
         
         http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-unified-stream"""
-        ep={u'url_params': [], u'group': u'post', u'name': u'getUnifiedStream', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-unified-stream', u'url': [u'posts/stream/unified'], u'scope': u'stream', u'id': u'214', u'description': u"Retrieve a User's unified stream"}
+        ep={u'url_params': [], u'group': u'post', u'name': u'getUnifiedStream', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination', u'stream_facet'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-unified-stream', u'url': [u'posts/stream/unified'], u'scope': u'stream', u'id': u'214', u'description': u"Retrieve a User's unified stream"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -605,6 +605,14 @@ Note that this sets access_token but doesn't save it."""
         http://developers.app.net/docs/resources/post/report/#report-a-post"""
         ep={u'url_params': [u'post_id'], u'group': u'post', u'name': u'report', u'array_params': [], u'data_params': [], u'get_params': [u'general_post'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/report/#report-a-post', u'url': [u'posts/', u'/report'], u'scope': u'basic', u'id': u'216', u'description': u'Report a Post'}
         url=self.geturl(ep , post_id)
+        return self.genRequest(url, ep, kargs)
+
+    def searchPost(self , **kargs):
+    	"""api.searchPost() - Search for Posts
+        
+        http://developers.app.net/docs/resources/post/search/#search-for-posts"""
+        ep={u'url_params': [], u'group': u'post', u'name': u'search', u'array_params': [], u'data_params': [], u'get_params': [u'post_search', u'general_post'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/post/search/#search-for-posts', u'url': [u'posts/search'], u'scope': u'basic', u'id': u'217', u'description': u'Search for Posts'}
+        url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getUserSubscribedChannel(self , **kargs):
@@ -724,6 +732,14 @@ Note that this sets access_token but doesn't save it."""
         
         http://developers.app.net/docs/resources/channel/muting/#get-current-users-muted-channels"""
         ep={u'url_params': [], u'group': u'channel', u'name': u'getMuted', u'array_params': [], u'data_params': [], u'get_params': [u'general_channel'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/muting/#get-current-users-muted-channels', u'url': [u'users/me/channels/muted'], u'scope': u'messages', u'id': u'314', u'description': u"Get current user's muted Channels"}
+        url=self.geturl(ep )
+        return self.genRequest(url, ep, kargs)
+
+    def searchChannel(self , **kargs):
+    	"""api.searchChannel() - Search for Channels
+        
+        http://developers.app.net/docs/resources/channel/search/#search-for-channels"""
+        ep={u'url_params': [], u'group': u'channel', u'name': u'search', u'array_params': [], u'data_params': [], u'get_params': [u'channel_search', u'general_channel'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/search/#search-for-channels', u'url': [u'channels/search'], u'scope': u'public_messages', u'id': u'315', u'description': u'Search for Channels'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -1019,7 +1035,7 @@ Note that this sets access_token but doesn't save it."""
     	"""api.searchPlace() - Search for Places
         
         http://developers.app.net/docs/resources/place/#search-for-a-place"""
-        ep={u'url_params': [], u'group': u'place', u'name': u'search', u'array_params': [], u'data_params': [], u'get_params': [u'placesearch'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/place/#search-for-a-place', u'url': [u'places/search'], u'scope': u'basic', u'id': u'1301', u'description': u'Search for Places'}
+        ep={u'url_params': [], u'group': u'place', u'name': u'search', u'array_params': [], u'data_params': [], u'get_params': [u'place_search'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/place/#search-for-a-place', u'url': [u'places/search'], u'scope': u'basic', u'id': u'1301', u'description': u'Search for Places'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
@@ -1035,6 +1051,14 @@ Note that this sets access_token but doesn't save it."""
     	"""api.getExplore(slug) - Retrieve an Explore Stream
         
         http://developers.app.net/docs/resources/explore/#retrieve-an-explore-stream"""
-        ep={u'url_params': [u'slug'], u'group': u'explore', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'pagination'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/explore/#retrieve-an-explore-stream', u'url': [u'stream/explore/'], u'scope': u'basic', u'id': u'1401', u'description': u'Retrieve an Explore Stream'}
+        ep={u'url_params': [u'slug'], u'group': u'explore', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'pagination'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/explore/#retrieve-an-explore-stream', u'url': [u'posts/stream/explore/'], u'scope': u'basic', u'id': u'1401', u'description': u'Retrieve an Explore Stream'}
         url=self.geturl(ep , slug)
+        return self.genRequest(url, ep, kargs)
+
+    def getConfig(self , **kargs):
+    	"""api.getConfig() - Retrieve the Configuration Object
+        
+        http://developers.app.net/docs/resources/config/#retrieve-the-configuration-object"""
+        ep={u'url_params': [], u'group': u'config', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/config/#retrieve-the-configuration-object', u'url': [u'config/'], u'scope': u'basic', u'id': u'1500', u'description': u'Retrieve the Configuration Object'}
+        url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)

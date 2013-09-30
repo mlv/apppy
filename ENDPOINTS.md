@@ -101,6 +101,8 @@ Obtains and returns an app access token.
 ####* api.getGlobalPost() - [Retrieve the Global stream](http://developers.app.net/docs/resources/post/streams/#retrieve-the-global-stream)
 
 ####* api.reportPost(post_id) - [Report a Post](http://developers.app.net/docs/resources/post/report/#report-a-post)
+
+####* api.searchPost() - [Search for Posts](http://developers.app.net/docs/resources/post/search/#search-for-posts)
 ###channel
 ####* api.getUserSubscribedChannel() - [Get current user's subscribed channels](http://developers.app.net/docs/resources/channel/subscriptions/#get-current-users-subscribed-channels)
 
@@ -131,6 +133,8 @@ Obtains and returns an app access token.
 ####* api.unmuteChannel(channel_id) - [Unmute a Channel](http://developers.app.net/docs/resources/channel/muting/#unmute-a-channel)
 
 ####* api.getMutedChannel() - [Get current user's muted Channels](http://developers.app.net/docs/resources/channel/muting/#get-current-users-muted-channels)
+
+####* api.searchChannel() - [Search for Channels](http://developers.app.net/docs/resources/channel/search/#search-for-channels)
 ###message
 ####* api.getChannelMessage(channel_id) - [Retrieve the Messages in a Channel](http://developers.app.net/docs/resources/message/lifecycle/#retrieve-the-messages-in-a-channel)
 
@@ -209,3 +213,5 @@ Obtains and returns an app access token.
 ####* api.showExplore() - [Retrieve all Explore Streams](http://developers.app.net/docs/resources/explore/#retrieve-all-explore-streams)
 
 ####* api.getExplore(slug) - [Retrieve an Explore Stream](http://developers.app.net/docs/resources/explore/#retrieve-an-explore-stream)
+###config
+####* api.getConfig() - [Retrieve the Configuration Object](http://developers.app.net/docs/resources/config/#retrieve-the-configuration-object)
