@@ -28,7 +28,7 @@ will let you catch 429 (rate limit) errors.
 
 Apppy.py is machine generated. It uses [@Duerig's endpoints.json library](https://github.com/duerig/appnet.js/blob/master/hbs/endpoints.json) to generate all the endpoints. The code that generates the endpoints is not part 
 of this distribution, so while I will work hard to fix any problems, I won't accept pull requests against 
-apppy.py (but I will use them to correct the source files that generate apppy.py). 
+apppy.py (but I will use them to correct the source files that generate apppy.py). But please submit issues if you have them.
 
 ##License:
 
