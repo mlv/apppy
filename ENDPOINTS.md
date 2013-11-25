@@ -116,7 +116,13 @@ Obtains and returns an app access token.
 
 ####* api.getUnreadCountChannel() - [Retrieve number of unread PM Channels](http://developers.app.net/docs/resources/channel/lookup/#retrieve-number-of-unread-pm-channels)
 
+####* api.getUnreadBroadcastCountChannel() - [Retrieve number of unread Broadcast Channels](http://developers.app.net/docs/resources/channel/lookup/#retrieve-number-of-unread-broadcast-channels)
+
+####* api.markBroadcastChannelsReadChannel() - [Mark all Broadcast Channels as read](http://developers.app.net/docs/resources/channel/lookup/#mark-all-broadcast-channels-as-read)
+
 ####* api.updateChannel(channel_id) - [Update a Channel](http://developers.app.net/docs/resources/channel/lifecycle/#update-a-channel)
+
+####* api.deactivateChannel(channel_id) - [Deactivate a Channel](http://developers.app.net/docs/resources/channel/lifecycle/#deactivate-a-channel)
 
 ####* api.subscribeChannel(channel_id) - [Subscribe to a Channel](http://developers.app.net/docs/resources/channel/subscriptions/#subscribe-to-a-channel)
 
