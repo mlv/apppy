@@ -1,3 +1,18 @@
+Version 1.2
+
+Broadcast channel changes: New endpoints:
+
+    getUnreadBroadcastCountChannel()
+    markBroadcastChannelsReadChannel()
+    deactivateChannel()
+
+Broadcast channels act just like regular channels, except they broadcast 
+to the app.net mobile app. 
+
+Also, it's now possible to deactivate (make it hard to find, permanently 
+block all new messages, etc) a channel.
+
+=======================
 Added user streams. They can be used like 
 ```
 st=api.createUserStream(timeout=600)

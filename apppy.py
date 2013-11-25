@@ -1,6 +1,9 @@
 import requests
 import itertools
 import json
+import time
+
+from functools import reduce
 
 class ratelimit(object):
     """ Class that manages rate limits. It may include higher level math to optimize sleep times, etc.
@@ -100,6 +103,7 @@ class apppy(ratelimit):
             self.set_accesstoken(access_token)
         if app_access_token:
             self.set_app_accesstoken(app_access_token)
+        self.debug = False
 
     def generateAuthUrl(self, client_id, client_secret, redirect_url, scopes=None):
         """api.generateAuthUrl(client_id, client_secret, redirect_url, scopes=None)
@@ -121,7 +125,17 @@ and you will have the access token."""
 
         url += " ".join(filter(lambda x:x in self.allscopes, scopes))
         return url
-        
+
+    def dprint(self, st):
+        import sys
+        if type(self.debug)==bool:
+            if not self.debug:
+                return
+            out=sys.stdout
+        else:
+            out=self.debug
+        out.write(st+"\n")
+
     def getAuthResponse(self, code):
         """api.getAuthResponse(code)
 
@@ -150,10 +164,10 @@ Note that this sets access_token but doesn't save it."""
 
 #        for k in params:
 #            url=url+"&{0}={1}".format(k,params[k])
-        print url
+        print (url)
         r=requests.post(url, data=params)
-        if r.status_code <> 200:
-            print r.text
+        if r.status_code != 200:
+            print (r.text)
         r.raise_for_status()
         d=r.json()
         return d['access_token']
@@ -167,8 +181,9 @@ Note that this sets access_token but doesn't save it."""
     def geturl(self, e, *opts):
         lparam=len(e['url_params'])
         assert len(opts) >= lparam
-        url=self.base+"".join(sum(itertools.izip_longest(e['url'], opts[:lparam], fillvalue=''), ()))
-    	return url
+        url=self.base+"".join(reduce(tuple.__add__, zip(e['url']+['','',''], list(opts[:lparam])+['','',''])))
+        # url=self.base+"".join(sum(itertools.izip_longest(e['url'], opts[:lparam], fillvalue=''), ()))
+        return url
     
 
     calls = {
@@ -212,7 +227,7 @@ Note that this sets access_token but doesn't save it."""
                      ("params", "array_params")):
             pl = self.expand_params(ep_data[epl])
             #print epl, ep_data[epl], pl
-            if c == "data" and (type(pl) == type('') or type(pl) == type(u'')):
+            if c == "data" and hasattr(pl, 'join'):
                 isjson = False
                 del rp['headers']['Content-Type']
                 continue
@@ -239,6 +254,8 @@ Note that this sets access_token but doesn't save it."""
         elif self.access_token:
             rp['headers']['Authorization'] = "Bearer " + self.access_token
         
+        self.dprint("calling {0} with URL {2} and all params {1}".format(ep_data['method'], json.dumps(rp, indent=2), url))
+
         call = self.calls[ep_data['method']]
 
         if isjson:
@@ -261,804 +278,828 @@ Note that this sets access_token but doesn't save it."""
                 if i > 0 or self.gimme_429:
                     r.raise_for_status()
                     return {} # shouldn't get here. This just in case...
-                sleep(float(r.header['RetryAfter']))
+                time.sleep(float(r.header['RetryAfter']))
                 # repeat the call
                 continue
 
             return r
         return r
     base="https://alpha-api.app.net/stream/0/"
-    parameter_category={u'general_channel': [u'channel_types', u'include_marker', u'include_read', u'include_recent_message', u'include_annotations', u'include_user_annotations', u'include_message_annotations', u'connection_id'], u'post_or_message': [u'text'], u'file_ids': [u'ids'], u'file': [u'kind', u'type', u'name', u'public', u'annotations'], u'marker': [u'id', u'name', u'percentage'], u'message': [u'text', u'reply_to', u'annotations', u'entities', u'machine_only', u'destinations'], u'message_ids': [u'ids'], u'UserStream': [], u'post_search': [u'index', u'order', u'query', u'text', u'hashtags', u'links', u'link_domains', u'mentions', u'leading_mentions', u'annotation_types', u'attachment_types', u'crosspost_url', u'crosspost_domain', u'place_id', u'is_reply', u'is_directed', u'has_location', u'has_checkin', u'is_crosspost', u'has_attachment', u'has_oembed_photo', u'has_oembed_video', u'has_oembed_html5video', u'has_oembed_rich', u'language', u'client_id', u'creator_id', u'reply_to', u'thread_id'], u'content': u'content', u'place_search': [u'latitude', u'longitude', u'q', u'radius', u'count', u'remove_closed', u'altitude', u'horizontal_accuracy', u'vertical_accuracy'], u'channel': [u'readers', u'writers', u'annotations', u'type'], u'avatar': u'image', u'channel_ids': [u'ids'], u'cover': u'image', u'user_ids': [u'ids'], u'user_search': [u'q', u'count'], u'user': [u'name', u'locale', u'timezone', u'description'], u'AppStream': [u'object_types', u'type', u'filter_id', u'key'], u'post': [u'text', u'reply_to', u'machine_only', u'annotations', u'entities'], u'general_file': [u'file_types', u'include_incomplete', u'include_private', u'include_annotations', u'include_file_annotations', u'include_user_annotations', u'connection_id'], u'general_post': [u'include_muted', u'include_deleted', u'include_directed_posts', u'include_machine', u'include_starred_by', u'include_reposters', u'include_annotations', u'include_post_annotations', u'include_user_annotations', u'include_html', u'connection_id'], u'pagination': [u'since_id', u'before_id', u'count'], u'general_user': [u'include_annotations', u'include_user_annotations', u'include_html', u'connection_id'], u'stream_facet': [u'has_oembed_photo'], u'filter': [u'name', u'match_policy', u'clauses'], u'general_message': [u'include_muted', u'include_deleted', u'include_machine', u'include_annotations', u'include_user_annotations', u'include_message_annotations', u'include_html', u'connection_id'], u'post_ids': [u'ids'], u'channel_search': [u'order', u'q', u'type', u'creator_id', u'tags']}
-    allscopes=[u'files', u'update_profile', u'stream', u'messages', u'public_messages', u'export', u'write_post', u'basic', u'follow', u'email']
+    parameter_category={'general_channel': ['channel_types', 'include_marker', 'include_read', 'include_recent_message', 'include_annotations', 'include_user_annotations', 'include_message_annotations', 'connection_id'], 'post_or_message': ['text'], 'file_ids': ['ids'], 'file': ['kind', 'type', 'name', 'public', 'annotations'], 'marker': ['id', 'name', 'percentage'], 'message': ['text', 'reply_to', 'annotations', 'entities', 'machine_only', 'destinations'], 'message_ids': ['ids'], 'UserStream': [], 'post_search': ['index', 'order', 'query', 'text', 'hashtags', 'links', 'link_domains', 'mentions', 'leading_mentions', 'annotation_types', 'attachment_types', 'crosspost_url', 'crosspost_domain', 'place_id', 'is_reply', 'is_directed', 'has_location', 'has_checkin', 'is_crosspost', 'has_attachment', 'has_oembed_photo', 'has_oembed_video', 'has_oembed_html5video', 'has_oembed_rich', 'language', 'client_id', 'creator_id', 'reply_to', 'thread_id'], 'content': 'content', 'place_search': ['latitude', 'longitude', 'q', 'radius', 'count', 'remove_closed', 'altitude', 'horizontal_accuracy', 'vertical_accuracy'], 'channel': ['readers', 'writers', 'annotations', 'type'], 'channel_ids': ['ids'], 'user_ids': ['ids'], 'user_search': ['q', 'count'], 'general_message': ['include_muted', 'include_deleted', 'include_machine', 'include_annotations', 'include_user_annotations', 'include_message_annotations', 'include_html', 'connection_id'], 'user': ['name', 'locale', 'timezone', 'description'], 'AppStream': ['object_types', 'type', 'filter_id', 'key'], 'post': ['text', 'reply_to', 'machine_only', 'annotations', 'entities'], 'general_file': ['file_types', 'include_incomplete', 'include_private', 'include_annotations', 'include_file_annotations', 'include_user_annotations', 'connection_id'], 'general_post': ['include_muted', 'include_deleted', 'include_directed_posts', 'include_machine', 'include_starred_by', 'include_reposters', 'include_annotations', 'include_post_annotations', 'include_user_annotations', 'include_html', 'connection_id'], 'pagination': ['since_id', 'before_id', 'count'], 'general_user': ['include_annotations', 'include_user_annotations', 'include_html', 'connection_id'], 'cover': 'image', 'filter': ['name', 'match_policy', 'clauses'], 'avatar': 'image', 'post_ids': ['ids'], 'stream_facet': ['has_oembed_photo'], 'channel_search': ['order', 'q', 'type', 'creator_id', 'tags']}
+    allscopes=['files', 'follow', 'update_profile', 'stream', 'messages', 'public_messages', 'export', 'basic', 'write_post', 'email']
 
     def getUser(self , user_id, **kargs):
-    	"""api.getUser(user_id) - Retrieve a User
+        """api.getUser(user_id) - Retrieve a User
         
         http://developers.app.net/docs/resources/user/lookup/#retrieve-a-user"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'general_user'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/user/lookup/#retrieve-a-user', u'url': [u'users/'], u'scope': u'basic', u'id': u'100', u'description': u'Retrieve a User'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'get', 'array_params': [], 'data_params': [], 'get_params': ['general_user'], 'url': ['users/'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/user/lookup/#retrieve-a-user', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve a User'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def updateUser(self , **kargs):
-    	"""api.updateUser() - Update a User
+        """api.updateUser() - Update a User
         
         http://developers.app.net/docs/resources/user/profile/#update-a-user"""
-        ep={u'url_params': [], u'group': u'user', u'name': u'update', u'array_params': [], u'data_params': [u'user'], u'get_params': [u'general_user'], u'method': u'PUT', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/user/profile/#update-a-user', u'url': [u'users/me'], u'scope': u'update_profile', u'id': u'101', u'description': u'Update a User'}
+        ep={'url_params': [], 'group': 'user', 'name': 'update', 'array_params': [], 'data_params': ['user'], 'get_params': ['general_user'], 'url': ['users/me'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/user/profile/#update-a-user', 'scope': 'update_profile', 'method': 'PUT', 'description': 'Update a User'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def partialUpdateUser(self , **kargs):
-    	"""api.partialUpdateUser() - Partially Update a User
+        """api.partialUpdateUser() - Partially Update a User
         
         http://developers.app.net/docs/resources/user/profile/#partially-update-a-user"""
-        ep={u'url_params': [], u'group': u'user', u'name': u'partialUpdate', u'array_params': [], u'data_params': [u'user'], u'get_params': [u'general_user'], u'method': u'PATCH', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/user/profile/#partially-update-a-user', u'url': [u'users/me'], u'scope': u'update_profile', u'id': u'124', u'description': u'Partially Update a User'}
+        ep={'url_params': [], 'group': 'user', 'name': 'partialUpdate', 'array_params': [], 'data_params': ['user'], 'get_params': ['general_user'], 'url': ['users/me'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/user/profile/#partially-update-a-user', 'scope': 'update_profile', 'method': 'PATCH', 'description': 'Partially Update a User'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getAvatarUser(self , user_id, **kargs):
-    	"""api.getAvatarUser(user_id) - Retrieve a User's avatar image
+        """api.getAvatarUser(user_id) - Retrieve a User's avatar image
         
         http://developers.app.net/docs/resources/user/profile/#retrieve-a-users-avatar-image"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'getAvatar', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/user/profile/#retrieve-a-users-avatar-image', u'url': [u'users/', u'/avatar'], u'scope': u'basic', u'id': u'102', u'description': u"Retrieve a User's avatar image"}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'getAvatar', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['users/', '/avatar'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/user/profile/#retrieve-a-users-avatar-image', 'scope': 'basic', 'method': 'GET', 'description': "Retrieve a User's avatar image"}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def updateAvatarUser(self , **kargs):
-    	"""api.updateAvatarUser() - Update a User's avatar image
+        """api.updateAvatarUser() - Update a User's avatar image
         
         http://developers.app.net/docs/resources/user/profile/#update-a-users-avatar-image"""
-        ep={u'url_params': [], u'group': u'user', u'name': u'updateAvatar', u'array_params': [], u'data_params': [u'avatar'], u'get_params': [], u'method': u'POST-RAW', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/user/profile/#update-a-users-avatar-image', u'url': [u'users/me/avatar'], u'scope': u'update_profile', u'id': u'103', u'description': u"Update a User's avatar image"}
+        ep={'url_params': [], 'group': 'user', 'name': 'updateAvatar', 'array_params': [], 'data_params': ['avatar'], 'get_params': [], 'url': ['users/me/avatar'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/user/profile/#update-a-users-avatar-image', 'scope': 'update_profile', 'method': 'POST-RAW', 'description': "Update a User's avatar image"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getCoverUser(self , user_id, **kargs):
-    	"""api.getCoverUser(user_id) - Retrieve a User's cover image
+        """api.getCoverUser(user_id) - Retrieve a User's cover image
         
         http://developers.app.net/docs/resources/user/profile/#retrieve-a-users-cover-image"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'getCover', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/user/profile/#retrieve-a-users-cover-image', u'url': [u'users/', u'/cover'], u'scope': u'basic', u'id': u'104', u'description': u"Retrieve a User's cover image"}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'getCover', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['users/', '/cover'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/user/profile/#retrieve-a-users-cover-image', 'scope': 'basic', 'method': 'GET', 'description': "Retrieve a User's cover image"}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def updateCoverUser(self , **kargs):
-    	"""api.updateCoverUser() - Update a User's cover image
+        """api.updateCoverUser() - Update a User's cover image
         
         http://developers.app.net/docs/resources/user/profile/#update-a-users-cover-image"""
-        ep={u'url_params': [], u'group': u'user', u'name': u'updateCover', u'array_params': [], u'data_params': [u'cover'], u'get_params': [], u'method': u'POST-RAW', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/user/profile/#update-a-users-cover-image', u'url': [u'users/me/cover'], u'scope': u'update_profile', u'id': u'105', u'description': u"Update a User's cover image"}
+        ep={'url_params': [], 'group': 'user', 'name': 'updateCover', 'array_params': [], 'data_params': ['cover'], 'get_params': [], 'url': ['users/me/cover'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/user/profile/#update-a-users-cover-image', 'scope': 'update_profile', 'method': 'POST-RAW', 'description': "Update a User's cover image"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def followUser(self , user_id, **kargs):
-    	"""api.followUser(user_id) - Follow a User
+        """api.followUser(user_id) - Follow a User
         
         http://developers.app.net/docs/resources/user/following/#follow-a-user"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'follow', u'array_params': [], u'data_params': [], u'get_params': [u'general_user'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/user/following/#follow-a-user', u'url': [u'users/', u'/follow'], u'scope': u'follow', u'id': u'106', u'description': u'Follow a User'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'follow', 'array_params': [], 'data_params': [], 'get_params': ['general_user'], 'url': ['users/', '/follow'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/user/following/#follow-a-user', 'scope': 'follow', 'method': 'POST', 'description': 'Follow a User'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def unfollowUser(self , user_id, **kargs):
-    	"""api.unfollowUser(user_id) - Unfollow a User
+        """api.unfollowUser(user_id) - Unfollow a User
         
         http://developers.app.net/docs/resources/user/following/#unfollow-a-user"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'unfollow', u'array_params': [], u'data_params': [], u'get_params': [u'general_user'], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/user/following/#unfollow-a-user', u'url': [u'users/', u'/follow'], u'scope': u'follow', u'id': u'107', u'description': u'Unfollow a User'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'unfollow', 'array_params': [], 'data_params': [], 'get_params': ['general_user'], 'url': ['users/', '/follow'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/user/following/#unfollow-a-user', 'scope': 'follow', 'method': 'DELETE', 'description': 'Unfollow a User'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def muteUser(self , user_id, **kargs):
-    	"""api.muteUser(user_id) - Mute a User
+        """api.muteUser(user_id) - Mute a User
         
         http://developers.app.net/docs/resources/user/muting/#mute-a-user"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'mute', u'array_params': [], u'data_params': [], u'get_params': [u'general_user'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/user/muting/#mute-a-user', u'url': [u'users/', u'/mute'], u'scope': u'follow', u'id': u'108', u'description': u'Mute a User'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'mute', 'array_params': [], 'data_params': [], 'get_params': ['general_user'], 'url': ['users/', '/mute'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/user/muting/#mute-a-user', 'scope': 'follow', 'method': 'POST', 'description': 'Mute a User'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def unmuteUser(self , user_id, **kargs):
-    	"""api.unmuteUser(user_id) - Unmute a User
+        """api.unmuteUser(user_id) - Unmute a User
         
         http://developers.app.net/docs/resources/user/muting/#unmute-a-user"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'unmute', u'array_params': [], u'data_params': [], u'get_params': [u'general_user'], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/user/muting/#unmute-a-user', u'url': [u'users/', u'/mute'], u'scope': u'follow', u'id': u'109', u'description': u'Unmute a User'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'unmute', 'array_params': [], 'data_params': [], 'get_params': ['general_user'], 'url': ['users/', '/mute'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/user/muting/#unmute-a-user', 'scope': 'follow', 'method': 'DELETE', 'description': 'Unmute a User'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def blockUser(self , user_id, **kargs):
-    	"""api.blockUser(user_id) - Block a User
+        """api.blockUser(user_id) - Block a User
         
         http://developers.app.net/docs/resources/user/blocking/#block-a-user"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'block', u'array_params': [], u'data_params': [], u'get_params': [u'general_user'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/user/blocking/#block-a-user', u'url': [u'users/', u'/block'], u'scope': u'follow', u'id': u'110', u'description': u'Block a User'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'block', 'array_params': [], 'data_params': [], 'get_params': ['general_user'], 'url': ['users/', '/block'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/user/blocking/#block-a-user', 'scope': 'follow', 'method': 'POST', 'description': 'Block a User'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def unblockUser(self , user_id, **kargs):
-    	"""api.unblockUser(user_id) - Unblock a User
+        """api.unblockUser(user_id) - Unblock a User
         
         http://developers.app.net/docs/resources/user/blocking/#unblock-a-user"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'unblock', u'array_params': [], u'data_params': [], u'get_params': [u'general_user'], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/user/blocking/#unblock-a-user', u'url': [u'users/', u'/block'], u'scope': u'follow', u'id': u'111', u'description': u'Unblock a User'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'unblock', 'array_params': [], 'data_params': [], 'get_params': ['general_user'], 'url': ['users/', '/block'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/user/blocking/#unblock-a-user', 'scope': 'follow', 'method': 'DELETE', 'description': 'Unblock a User'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def getListUser(self , **kargs):
-    	"""api.getListUser(ids=[...]) - Retrieve multiple Users
+        """api.getListUser(ids=[...]) - Retrieve multiple Users
         
         http://developers.app.net/docs/resources/user/lookup/#retrieve-multiple-users"""
-        ep={u'url_params': [], u'group': u'user', u'name': u'getList', u'array_params': [u'user_ids'], u'data_params': [], u'get_params': [u'general_user'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/user/lookup/#retrieve-multiple-users', u'url': [u'users'], u'scope': u'basic', u'id': u'112', u'description': u'Retrieve multiple Users'}
+        ep={'url_params': [], 'group': 'user', 'name': 'getList', 'array_params': ['user_ids'], 'data_params': [], 'get_params': ['general_user'], 'url': ['users'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/user/lookup/#retrieve-multiple-users', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve multiple Users'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def searchUser(self , **kargs):
-    	"""api.searchUser() - Search for Users
+        """api.searchUser() - Search for Users
         
         http://developers.app.net/docs/resources/user/lookup/#search-for-users"""
-        ep={u'url_params': [], u'group': u'user', u'name': u'search', u'array_params': [], u'data_params': [], u'get_params': [u'user_search', u'general_user'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/user/lookup/#search-for-users', u'url': [u'users/search'], u'scope': u'basic', u'id': u'113', u'description': u'Search for Users'}
+        ep={'url_params': [], 'group': 'user', 'name': 'search', 'array_params': [], 'data_params': [], 'get_params': ['user_search', 'general_user'], 'url': ['users/search'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/user/lookup/#search-for-users', 'scope': 'basic', 'method': 'GET', 'description': 'Search for Users'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getFollowingUser(self , user_id, **kargs):
-    	"""api.getFollowingUser(user_id) - Retrieve Users a User is following
+        """api.getFollowingUser(user_id) - Retrieve Users a User is following
         
         http://developers.app.net/docs/resources/user/following/#list-users-a-user-is-following"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'getFollowing', u'array_params': [], u'data_params': [], u'get_params': [u'general_user', u'pagination'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/user/following/#list-users-a-user-is-following', u'url': [u'users/', u'/following'], u'scope': u'basic', u'id': u'114', u'description': u'Retrieve Users a User is following'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'getFollowing', 'array_params': [], 'data_params': [], 'get_params': ['general_user', 'pagination'], 'url': ['users/', '/following'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/user/following/#list-users-a-user-is-following', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve Users a User is following'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def getFollowersUser(self , user_id, **kargs):
-    	"""api.getFollowersUser(user_id) - Retrieve Users following a User
+        """api.getFollowersUser(user_id) - Retrieve Users following a User
         
         http://developers.app.net/docs/resources/user/following/#list-users-following-a-user"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'getFollowers', u'array_params': [], u'data_params': [], u'get_params': [u'general_user', u'pagination'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/user/following/#list-users-following-a-user', u'url': [u'users/', u'/followers'], u'scope': u'basic', u'id': u'115', u'description': u'Retrieve Users following a User'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'getFollowers', 'array_params': [], 'data_params': [], 'get_params': ['general_user', 'pagination'], 'url': ['users/', '/followers'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/user/following/#list-users-following-a-user', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve Users following a User'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def getFollowingIdsUser(self , user_id, **kargs):
-    	"""api.getFollowingIdsUser(user_id) - Retrieve IDs of Users a User is following
+        """api.getFollowingIdsUser(user_id) - Retrieve IDs of Users a User is following
         
         http://developers.app.net/docs/resources/user/following/#list-user-ids-a-user-is-following"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'getFollowingIds', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/user/following/#list-user-ids-a-user-is-following', u'url': [u'users/', u'/following/ids'], u'scope': u'basic', u'id': u'116', u'description': u'Retrieve IDs of Users a User is following'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'getFollowingIds', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['users/', '/following/ids'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/user/following/#list-user-ids-a-user-is-following', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve IDs of Users a User is following'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def getFollowerIdsUser(self , user_id, **kargs):
-    	"""api.getFollowerIdsUser(user_id) - Retrieve IDs of Users following a User
+        """api.getFollowerIdsUser(user_id) - Retrieve IDs of Users following a User
         
         http://developers.app.net/docs/resources/user/following/#list-user-ids-following-a-user"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'getFollowerIds', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/user/following/#list-user-ids-following-a-user', u'url': [u'users/', u'/followers/ids'], u'scope': u'basic', u'id': u'117', u'description': u'Retrieve IDs of Users following a User'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'getFollowerIds', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['users/', '/followers/ids'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/user/following/#list-user-ids-following-a-user', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve IDs of Users following a User'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def getMutedUser(self , user_id, **kargs):
-    	"""api.getMutedUser(user_id) - Retrieve muted Users
+        """api.getMutedUser(user_id) - Retrieve muted Users
         
         http://developers.app.net/docs/resources/user/muting/#list-muted-users"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'getMuted', u'array_params': [], u'data_params': [], u'get_params': [u'general_user'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/user/muting/#list-muted-users', u'url': [u'users/', u'/muted'], u'scope': u'basic', u'id': u'118', u'description': u'Retrieve muted Users'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'getMuted', 'array_params': [], 'data_params': [], 'get_params': ['general_user'], 'url': ['users/', '/muted'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/user/muting/#list-muted-users', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve muted Users'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def getMutedListUser(self , **kargs):
-    	"""api.getMutedListUser(ids=[...]) - Retrieve muted User IDs for multiple Users
+        """api.getMutedListUser(ids=[...]) - Retrieve muted User IDs for multiple Users
         
         http://developers.app.net/docs/resources/user/muting/#retrieve-muted-user-ids-for-multiple-users"""
-        ep={u'url_params': [], u'group': u'user', u'name': u'getMutedList', u'array_params': [u'user_ids'], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/user/muting/#retrieve-muted-user-ids-for-multiple-users', u'url': [u'users/muted/ids'], u'scope': u'basic', u'id': u'119', u'description': u'Retrieve muted User IDs for multiple Users'}
+        ep={'url_params': [], 'group': 'user', 'name': 'getMutedList', 'array_params': ['user_ids'], 'data_params': [], 'get_params': [], 'url': ['users/muted/ids'], 'token': 'App', 'link': 'http://developers.app.net/docs/resources/user/muting/#retrieve-muted-user-ids-for-multiple-users', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve muted User IDs for multiple Users'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getBlockedUser(self , user_id, **kargs):
-    	"""api.getBlockedUser(user_id) - Retrieve blocked Users
+        """api.getBlockedUser(user_id) - Retrieve blocked Users
         
         http://developers.app.net/docs/resources/user/blocking/#list-blocked-users"""
-        ep={u'url_params': [u'user_id'], u'group': u'user', u'name': u'getBlocked', u'array_params': [], u'data_params': [], u'get_params': [u'general_user'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/user/blocking/#list-blocked-users', u'url': [u'users/', u'/blocked'], u'scope': u'basic', u'id': u'120', u'description': u'Retrieve blocked Users'}
+        ep={'url_params': ['user_id'], 'group': 'user', 'name': 'getBlocked', 'array_params': [], 'data_params': [], 'get_params': ['general_user'], 'url': ['users/', '/blocked'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/user/blocking/#list-blocked-users', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve blocked Users'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def getBlockedListUser(self , **kargs):
-    	"""api.getBlockedListUser(ids=[...]) - Retrieve blocked User IDs for multiple Users
+        """api.getBlockedListUser(ids=[...]) - Retrieve blocked User IDs for multiple Users
         
         http://developers.app.net/docs/resources/user/blocking/#retrieve-blocked-user-ids-for-multiple-users"""
-        ep={u'url_params': [], u'group': u'user', u'name': u'getBlockedList', u'array_params': [u'user_ids'], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/user/blocking/#retrieve-blocked-user-ids-for-multiple-users', u'url': [u'users/blocked/ids'], u'scope': u'basic', u'id': u'121', u'description': u'Retrieve blocked User IDs for multiple Users'}
+        ep={'url_params': [], 'group': 'user', 'name': 'getBlockedList', 'array_params': ['user_ids'], 'data_params': [], 'get_params': [], 'url': ['users/blocked/ids'], 'token': 'App', 'link': 'http://developers.app.net/docs/resources/user/blocking/#retrieve-blocked-user-ids-for-multiple-users', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve blocked User IDs for multiple Users'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getRepostersUser(self , post_id, **kargs):
-    	"""api.getRepostersUser(post_id) - Retrieve Users who reposted a Post
+        """api.getRepostersUser(post_id) - Retrieve Users who reposted a Post
         
         http://developers.app.net/docs/resources/user/post-interactions/#list-users-who-have-reposted-a-post"""
-        ep={u'url_params': [u'post_id'], u'group': u'user', u'name': u'getReposters', u'array_params': [], u'data_params': [], u'get_params': [u'general_user'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/user/post-interactions/#list-users-who-have-reposted-a-post', u'url': [u'posts/', u'/reposters'], u'scope': u'basic', u'id': u'122', u'description': u'Retrieve Users who reposted a Post'}
+        ep={'url_params': ['post_id'], 'group': 'user', 'name': 'getReposters', 'array_params': [], 'data_params': [], 'get_params': ['general_user'], 'url': ['posts/', '/reposters'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/user/post-interactions/#list-users-who-have-reposted-a-post', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve Users who reposted a Post'}
         url=self.geturl(ep , post_id)
         return self.genRequest(url, ep, kargs)
 
     def getStarsUser(self , post_id, **kargs):
-    	"""api.getStarsUser(post_id) - Retrieve Users who starred a Post
+        """api.getStarsUser(post_id) - Retrieve Users who starred a Post
         
         http://developers.app.net/docs/resources/user/post-interactions/#list-users-who-have-starred-a-post"""
-        ep={u'url_params': [u'post_id'], u'group': u'user', u'name': u'getStars', u'array_params': [], u'data_params': [], u'get_params': [u'general_user'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/user/post-interactions/#list-users-who-have-starred-a-post', u'url': [u'posts/', u'/stars'], u'scope': u'basic', u'id': u'123', u'description': u'Retrieve Users who starred a Post'}
+        ep={'url_params': ['post_id'], 'group': 'user', 'name': 'getStars', 'array_params': [], 'data_params': [], 'get_params': ['general_user'], 'url': ['posts/', '/stars'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/user/post-interactions/#list-users-who-have-starred-a-post', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve Users who starred a Post'}
         url=self.geturl(ep , post_id)
         return self.genRequest(url, ep, kargs)
 
     def createPost(self , **kargs):
-    	"""api.createPost() - Create a Post
+        """api.createPost() - Create a Post
         
         http://developers.app.net/docs/resources/post/lifecycle/#create-a-post"""
-        ep={u'url_params': [], u'group': u'post', u'name': u'create', u'array_params': [], u'data_params': [u'post'], u'get_params': [u'general_post'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/lifecycle/#create-a-post', u'url': [u'posts'], u'scope': u'write_post', u'id': u'200', u'description': u'Create a Post'}
+        ep={'url_params': [], 'group': 'post', 'name': 'create', 'array_params': [], 'data_params': ['post'], 'get_params': ['general_post'], 'url': ['posts'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/post/lifecycle/#create-a-post', 'scope': 'write_post', 'method': 'POST', 'description': 'Create a Post'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getPost(self , post_id, **kargs):
-    	"""api.getPost(post_id) - Retrieve a Post
+        """api.getPost(post_id) - Retrieve a Post
         
         http://developers.app.net/docs/resources/post/lookup/#retrieve-a-post"""
-        ep={u'url_params': [u'post_id'], u'group': u'post', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'general_post'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/post/lookup/#retrieve-a-post', u'url': [u'posts/'], u'scope': u'basic', u'id': u'201', u'description': u'Retrieve a Post'}
+        ep={'url_params': ['post_id'], 'group': 'post', 'name': 'get', 'array_params': [], 'data_params': [], 'get_params': ['general_post'], 'url': ['posts/'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/post/lookup/#retrieve-a-post', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve a Post'}
         url=self.geturl(ep , post_id)
         return self.genRequest(url, ep, kargs)
 
     def destroyPost(self , post_id, **kargs):
-    	"""api.destroyPost(post_id) - Delete a Post
+        """api.destroyPost(post_id) - Delete a Post
         
         http://developers.app.net/docs/resources/post/lifecycle/#delete-a-post"""
-        ep={u'url_params': [u'post_id'], u'group': u'post', u'name': u'destroy', u'array_params': [], u'data_params': [], u'get_params': [u'general_post'], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/lifecycle/#delete-a-post', u'url': [u'posts/'], u'scope': u'write_post', u'id': u'202', u'description': u'Delete a Post'}
+        ep={'url_params': ['post_id'], 'group': 'post', 'name': 'destroy', 'array_params': [], 'data_params': [], 'get_params': ['general_post'], 'url': ['posts/'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/post/lifecycle/#delete-a-post', 'scope': 'write_post', 'method': 'DELETE', 'description': 'Delete a Post'}
         url=self.geturl(ep , post_id)
         return self.genRequest(url, ep, kargs)
 
     def repostPost(self , post_id, **kargs):
-    	"""api.repostPost(post_id) - Repost a Post
+        """api.repostPost(post_id) - Repost a Post
         
         http://developers.app.net/docs/resources/post/reposts/#repost-a-post"""
-        ep={u'url_params': [u'post_id'], u'group': u'post', u'name': u'repost', u'array_params': [], u'data_params': [], u'get_params': [u'general_post'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/reposts/#repost-a-post', u'url': [u'posts/', u'/repost'], u'scope': u'write_post', u'id': u'203', u'description': u'Repost a Post'}
+        ep={'url_params': ['post_id'], 'group': 'post', 'name': 'repost', 'array_params': [], 'data_params': [], 'get_params': ['general_post'], 'url': ['posts/', '/repost'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/post/reposts/#repost-a-post', 'scope': 'write_post', 'method': 'POST', 'description': 'Repost a Post'}
         url=self.geturl(ep , post_id)
         return self.genRequest(url, ep, kargs)
 
     def unrepostPost(self , post_id, **kargs):
-    	"""api.unrepostPost(post_id) - Unrepost a Post
+        """api.unrepostPost(post_id) - Unrepost a Post
         
         http://developers.app.net/docs/resources/post/reposts/#unrepost-a-post"""
-        ep={u'url_params': [u'post_id'], u'group': u'post', u'name': u'unrepost', u'array_params': [], u'data_params': [], u'get_params': [u'general_post'], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/reposts/#unrepost-a-post', u'url': [u'posts/', u'/repost'], u'scope': u'write_post', u'id': u'204', u'description': u'Unrepost a Post'}
+        ep={'url_params': ['post_id'], 'group': 'post', 'name': 'unrepost', 'array_params': [], 'data_params': [], 'get_params': ['general_post'], 'url': ['posts/', '/repost'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/post/reposts/#unrepost-a-post', 'scope': 'write_post', 'method': 'DELETE', 'description': 'Unrepost a Post'}
         url=self.geturl(ep , post_id)
         return self.genRequest(url, ep, kargs)
 
     def starPost(self , post_id, **kargs):
-    	"""api.starPost(post_id) - Star a Post
+        """api.starPost(post_id) - Star a Post
         
         http://developers.app.net/docs/resources/post/stars/#star-a-post"""
-        ep={u'url_params': [u'post_id'], u'group': u'post', u'name': u'star', u'array_params': [], u'data_params': [], u'get_params': [u'general_post'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/stars/#star-a-post', u'url': [u'posts/', u'/star'], u'scope': u'write_post', u'id': u'205', u'description': u'Star a Post'}
+        ep={'url_params': ['post_id'], 'group': 'post', 'name': 'star', 'array_params': [], 'data_params': [], 'get_params': ['general_post'], 'url': ['posts/', '/star'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/post/stars/#star-a-post', 'scope': 'write_post', 'method': 'POST', 'description': 'Star a Post'}
         url=self.geturl(ep , post_id)
         return self.genRequest(url, ep, kargs)
 
     def unstarPost(self , post_id, **kargs):
-    	"""api.unstarPost(post_id) - Unstar a Post
+        """api.unstarPost(post_id) - Unstar a Post
         
         http://developers.app.net/docs/resources/post/stars/#unstar-a-post"""
-        ep={u'url_params': [u'post_id'], u'group': u'post', u'name': u'unstar', u'array_params': [], u'data_params': [], u'get_params': [u'general_post'], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/stars/#unstar-a-post', u'url': [u'posts/', u'/star'], u'scope': u'write_post', u'id': u'206', u'description': u'Unstar a Post'}
+        ep={'url_params': ['post_id'], 'group': 'post', 'name': 'unstar', 'array_params': [], 'data_params': [], 'get_params': ['general_post'], 'url': ['posts/', '/star'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/post/stars/#unstar-a-post', 'scope': 'write_post', 'method': 'DELETE', 'description': 'Unstar a Post'}
         url=self.geturl(ep , post_id)
         return self.genRequest(url, ep, kargs)
 
     def getListPost(self , **kargs):
-    	"""api.getListPost(ids=[...]) - Retrieve multiple Posts
+        """api.getListPost(ids=[...]) - Retrieve multiple Posts
         
         http://developers.app.net/docs/resources/post/lookup/#retrieve-multiple-posts"""
-        ep={u'url_params': [], u'group': u'post', u'name': u'getList', u'array_params': [u'post_ids'], u'data_params': [], u'get_params': [u'general_post'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/post/lookup/#retrieve-multiple-posts', u'url': [u'posts'], u'scope': u'basic', u'id': u'207', u'description': u'Retrieve multiple Posts'}
+        ep={'url_params': [], 'group': 'post', 'name': 'getList', 'array_params': ['post_ids'], 'data_params': [], 'get_params': ['general_post'], 'url': ['posts'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/post/lookup/#retrieve-multiple-posts', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve multiple Posts'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getUserPost(self , user_id, **kargs):
-    	"""api.getUserPost(user_id) - Retrieve a User's posts
+        """api.getUserPost(user_id) - Retrieve a User's posts
         
         http://developers.app.net/docs/resources/post/streams/#retrieve-posts-created-by-a-user"""
-        ep={u'url_params': [u'user_id'], u'group': u'post', u'name': u'getUser', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/post/streams/#retrieve-posts-created-by-a-user', u'url': [u'users/', u'/posts'], u'scope': u'basic', u'id': u'208', u'description': u"Retrieve a User's posts"}
+        ep={'url_params': ['user_id'], 'group': 'post', 'name': 'getUser', 'array_params': [], 'data_params': [], 'get_params': ['general_post', 'pagination'], 'url': ['users/', '/posts'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/post/streams/#retrieve-posts-created-by-a-user', 'scope': 'basic', 'method': 'GET', 'description': "Retrieve a User's posts"}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def getUserStarredPost(self , user_id, **kargs):
-    	"""api.getUserStarredPost(user_id) - Retrieve a User's starred posts
+        """api.getUserStarredPost(user_id) - Retrieve a User's starred posts
         
         http://developers.app.net/docs/resources/post/stars/#retrieve-posts-starred-by-a-user"""
-        ep={u'url_params': [u'user_id'], u'group': u'post', u'name': u'getUserStarred', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/post/stars/#retrieve-posts-starred-by-a-user', u'url': [u'users/', u'/stars'], u'scope': u'basic', u'id': u'209', u'description': u"Retrieve a User's starred posts"}
+        ep={'url_params': ['user_id'], 'group': 'post', 'name': 'getUserStarred', 'array_params': [], 'data_params': [], 'get_params': ['general_post', 'pagination'], 'url': ['users/', '/stars'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/post/stars/#retrieve-posts-starred-by-a-user', 'scope': 'basic', 'method': 'GET', 'description': "Retrieve a User's starred posts"}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def getUserMentionsPost(self , user_id, **kargs):
-    	"""api.getUserMentionsPost(user_id) - Retrieve Posts mentioning a User
+        """api.getUserMentionsPost(user_id) - Retrieve Posts mentioning a User
         
         http://developers.app.net/docs/resources/post/streams/#retrieve-posts-mentioning-a-user"""
-        ep={u'url_params': [u'user_id'], u'group': u'post', u'name': u'getUserMentions', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/post/streams/#retrieve-posts-mentioning-a-user', u'url': [u'users/', u'/mentions'], u'scope': u'basic', u'id': u'210', u'description': u'Retrieve Posts mentioning a User'}
+        ep={'url_params': ['user_id'], 'group': 'post', 'name': 'getUserMentions', 'array_params': [], 'data_params': [], 'get_params': ['general_post', 'pagination'], 'url': ['users/', '/mentions'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/post/streams/#retrieve-posts-mentioning-a-user', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve Posts mentioning a User'}
         url=self.geturl(ep , user_id)
         return self.genRequest(url, ep, kargs)
 
     def getHashtagPost(self , hashtag, **kargs):
-    	"""api.getHashtagPost(hashtag) - Retrieve Posts containing a hashtag
+        """api.getHashtagPost(hashtag) - Retrieve Posts containing a hashtag
         
         http://developers.app.net/docs/resources/post/streams/#retrieve-tagged-posts"""
-        ep={u'url_params': [u'hashtag'], u'group': u'post', u'name': u'getHashtag', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/post/streams/#retrieve-tagged-posts', u'url': [u'posts/tag/'], u'scope': u'basic', u'id': u'211', u'description': u'Retrieve Posts containing a hashtag'}
+        ep={'url_params': ['hashtag'], 'group': 'post', 'name': 'getHashtag', 'array_params': [], 'data_params': [], 'get_params': ['general_post', 'pagination'], 'url': ['posts/tag/'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/post/streams/#retrieve-tagged-posts', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve Posts containing a hashtag'}
         url=self.geturl(ep , hashtag)
         return self.genRequest(url, ep, kargs)
 
     def getThreadPost(self , post_id, **kargs):
-    	"""api.getThreadPost(post_id) - Retrieve replies to a Post
+        """api.getThreadPost(post_id) - Retrieve replies to a Post
         
         http://developers.app.net/docs/resources/post/replies"""
-        ep={u'url_params': [u'post_id'], u'group': u'post', u'name': u'getThread', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/post/replies', u'url': [u'posts/', u'/replies'], u'scope': u'basic', u'id': u'212', u'description': u'Retrieve replies to a Post'}
+        ep={'url_params': ['post_id'], 'group': 'post', 'name': 'getThread', 'array_params': [], 'data_params': [], 'get_params': ['general_post', 'pagination'], 'url': ['posts/', '/replies'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/post/replies', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve replies to a Post'}
         url=self.geturl(ep , post_id)
         return self.genRequest(url, ep, kargs)
 
     def getUserStreamPost(self , **kargs):
-    	"""api.getUserStreamPost() - Retrieve a User's personalized stream
+        """api.getUserStreamPost() - Retrieve a User's personalized stream
         
         http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-personalized-stream"""
-        ep={u'url_params': [], u'group': u'post', u'name': u'getUserStream', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination', u'stream_facet'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-personalized-stream', u'url': [u'posts/stream'], u'scope': u'stream', u'id': u'213', u'description': u"Retrieve a User's personalized stream"}
+        ep={'url_params': [], 'group': 'post', 'name': 'getUserStream', 'array_params': [], 'data_params': [], 'get_params': ['general_post', 'pagination', 'stream_facet'], 'url': ['posts/stream'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-personalized-stream', 'scope': 'stream', 'method': 'GET', 'description': "Retrieve a User's personalized stream"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getUnifiedStreamPost(self , **kargs):
-    	"""api.getUnifiedStreamPost() - Retrieve a User's unified stream
+        """api.getUnifiedStreamPost() - Retrieve a User's unified stream
         
         http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-unified-stream"""
-        ep={u'url_params': [], u'group': u'post', u'name': u'getUnifiedStream', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination', u'stream_facet'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-unified-stream', u'url': [u'posts/stream/unified'], u'scope': u'stream', u'id': u'214', u'description': u"Retrieve a User's unified stream"}
+        ep={'url_params': [], 'group': 'post', 'name': 'getUnifiedStream', 'array_params': [], 'data_params': [], 'get_params': ['general_post', 'pagination', 'stream_facet'], 'url': ['posts/stream/unified'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/post/streams/#retrieve-a-users-unified-stream', 'scope': 'stream', 'method': 'GET', 'description': "Retrieve a User's unified stream"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getGlobalPost(self , **kargs):
-    	"""api.getGlobalPost() - Retrieve the Global stream
+        """api.getGlobalPost() - Retrieve the Global stream
         
         http://developers.app.net/docs/resources/post/streams/#retrieve-the-global-stream"""
-        ep={u'url_params': [], u'group': u'post', u'name': u'getGlobal', u'array_params': [], u'data_params': [], u'get_params': [u'general_post', u'pagination'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/streams/#retrieve-the-global-stream', u'url': [u'posts/stream/global'], u'scope': u'basic', u'id': u'215', u'description': u'Retrieve the Global stream'}
+        ep={'url_params': [], 'group': 'post', 'name': 'getGlobal', 'array_params': [], 'data_params': [], 'get_params': ['general_post', 'pagination'], 'url': ['posts/stream/global'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/post/streams/#retrieve-the-global-stream', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve the Global stream'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def reportPost(self , post_id, **kargs):
-    	"""api.reportPost(post_id) - Report a Post
+        """api.reportPost(post_id) - Report a Post
         
         http://developers.app.net/docs/resources/post/report/#report-a-post"""
-        ep={u'url_params': [u'post_id'], u'group': u'post', u'name': u'report', u'array_params': [], u'data_params': [], u'get_params': [u'general_post'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/post/report/#report-a-post', u'url': [u'posts/', u'/report'], u'scope': u'basic', u'id': u'216', u'description': u'Report a Post'}
+        ep={'url_params': ['post_id'], 'group': 'post', 'name': 'report', 'array_params': [], 'data_params': [], 'get_params': ['general_post'], 'url': ['posts/', '/report'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/post/report/#report-a-post', 'scope': 'basic', 'method': 'POST', 'description': 'Report a Post'}
         url=self.geturl(ep , post_id)
         return self.genRequest(url, ep, kargs)
 
     def searchPost(self , **kargs):
-    	"""api.searchPost() - Search for Posts
+        """api.searchPost() - Search for Posts
         
         http://developers.app.net/docs/resources/post/search/#search-for-posts"""
-        ep={u'url_params': [], u'group': u'post', u'name': u'search', u'array_params': [], u'data_params': [], u'get_params': [u'post_search', u'general_post'], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/post/search/#search-for-posts', u'url': [u'posts/search'], u'scope': u'basic', u'id': u'217', u'description': u'Search for Posts'}
+        ep={'url_params': [], 'group': 'post', 'name': 'search', 'array_params': [], 'data_params': [], 'get_params': ['post_search', 'general_post'], 'url': ['posts/search'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/post/search/#search-for-posts', 'scope': 'basic', 'method': 'GET', 'description': 'Search for Posts'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getUserSubscribedChannel(self , **kargs):
-    	"""api.getUserSubscribedChannel() - Get current user's subscribed channels
+        """api.getUserSubscribedChannel() - Get current user's subscribed channels
         
         http://developers.app.net/docs/resources/channel/subscriptions/#get-current-users-subscribed-channels"""
-        ep={u'url_params': [], u'group': u'channel', u'name': u'getUserSubscribed', u'array_params': [], u'data_params': [], u'get_params': [u'general_channel', u'pagination'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/subscriptions/#get-current-users-subscribed-channels', u'url': [u'channels'], u'scope': u'messages', u'id': u'300', u'description': u"Get current user's subscribed channels"}
+        ep={'url_params': [], 'group': 'channel', 'name': 'getUserSubscribed', 'array_params': [], 'data_params': [], 'get_params': ['general_channel', 'pagination'], 'url': ['channels'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/subscriptions/#get-current-users-subscribed-channels', 'scope': 'messages', 'method': 'GET', 'description': "Get current user's subscribed channels"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def createChannel(self , **kargs):
-    	"""api.createChannel() - Create a Channel
+        """api.createChannel() - Create a Channel
         
         http://developers.app.net/docs/resources/channel/lifecycle/#create-a-channel"""
-        ep={u'url_params': [], u'group': u'channel', u'name': u'create', u'array_params': [], u'data_params': [u'channel'], u'get_params': [u'general_channel'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/lifecycle/#create-a-channel', u'url': [u'channels'], u'scope': u'messages', u'id': u'301', u'description': u'Create a Channel'}
+        ep={'url_params': [], 'group': 'channel', 'name': 'create', 'array_params': [], 'data_params': ['channel'], 'get_params': ['general_channel'], 'url': ['channels'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/lifecycle/#create-a-channel', 'scope': 'messages', 'method': 'POST', 'description': 'Create a Channel'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getChannel(self , channel_id, **kargs):
-    	"""api.getChannel(channel_id) - Retrieve a Channel
+        """api.getChannel(channel_id) - Retrieve a Channel
         
         http://developers.app.net/docs/resources/channel/lookup/#retrieve-a-channel"""
-        ep={u'url_params': [u'channel_id'], u'group': u'channel', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'general_channel'], u'method': u'GET', u'token': u'Varies', u'link': u'http://developers.app.net/docs/resources/channel/lookup/#retrieve-a-channel', u'url': [u'channels/'], u'scope': u'messages', u'id': u'302', u'description': u'Retrieve a Channel'}
+        ep={'url_params': ['channel_id'], 'group': 'channel', 'name': 'get', 'array_params': [], 'data_params': [], 'get_params': ['general_channel'], 'url': ['channels/'], 'token': 'Varies', 'link': 'http://developers.app.net/docs/resources/channel/lookup/#retrieve-a-channel', 'scope': 'messages', 'method': 'GET', 'description': 'Retrieve a Channel'}
         url=self.geturl(ep , channel_id)
         return self.genRequest(url, ep, kargs)
 
     def getListChannel(self , **kargs):
-    	"""api.getListChannel(ids=[...]) - Retrieve multiple Channels
+        """api.getListChannel(ids=[...]) - Retrieve multiple Channels
         
         http://developers.app.net/docs/resources/channel/lookup/#retrieve-multiple-channels"""
-        ep={u'url_params': [], u'group': u'channel', u'name': u'getList', u'array_params': [u'channel_ids'], u'data_params': [], u'get_params': [u'general_channel'], u'method': u'GET', u'token': u'Varies', u'link': u'http://developers.app.net/docs/resources/channel/lookup/#retrieve-multiple-channels', u'url': [u'channels'], u'scope': u'messages', u'id': u'303', u'description': u'Retrieve multiple Channels'}
+        ep={'url_params': [], 'group': 'channel', 'name': 'getList', 'array_params': ['channel_ids'], 'data_params': [], 'get_params': ['general_channel'], 'url': ['channels'], 'token': 'Varies', 'link': 'http://developers.app.net/docs/resources/channel/lookup/#retrieve-multiple-channels', 'scope': 'messages', 'method': 'GET', 'description': 'Retrieve multiple Channels'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getCreatedChannel(self , **kargs):
-    	"""api.getCreatedChannel() - Retrieve my Channels
+        """api.getCreatedChannel() - Retrieve my Channels
         
         http://developers.app.net/docs/resources/channel/lookup/#retrieve-my-channels"""
-        ep={u'url_params': [], u'group': u'channel', u'name': u'getCreated', u'array_params': [], u'data_params': [], u'get_params': [u'general_channel', u'pagination'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/lookup/#retrieve-my-channels', u'url': [u'users/me/channels'], u'scope': u'messages', u'id': u'304', u'description': u'Retrieve my Channels'}
+        ep={'url_params': [], 'group': 'channel', 'name': 'getCreated', 'array_params': [], 'data_params': [], 'get_params': ['general_channel', 'pagination'], 'url': ['users/me/channels'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/lookup/#retrieve-my-channels', 'scope': 'messages', 'method': 'GET', 'description': 'Retrieve my Channels'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getUnreadCountChannel(self , **kargs):
-    	"""api.getUnreadCountChannel() - Retrieve number of unread PM Channels
+        """api.getUnreadCountChannel() - Retrieve number of unread PM Channels
         
         http://developers.app.net/docs/resources/channel/lookup/#retrieve-number-of-unread-pm-channels"""
-        ep={u'url_params': [], u'group': u'channel', u'name': u'getUnreadCount', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/lookup/#retrieve-number-of-unread-pm-channels', u'url': [u'users/me/channels/pm/num_unread'], u'scope': u'messages', u'id': u'305', u'description': u'Retrieve number of unread PM Channels'}
+        ep={'url_params': [], 'group': 'channel', 'name': 'getUnreadCount', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['users/me/channels/pm/num_unread'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/lookup/#retrieve-number-of-unread-pm-channels', 'scope': 'messages', 'method': 'GET', 'description': 'Retrieve number of unread PM Channels'}
+        url=self.geturl(ep )
+        return self.genRequest(url, ep, kargs)
+
+    def getUnreadBroadcastCountChannel(self , **kargs):
+        """api.getUnreadBroadcastCountChannel() - Retrieve number of unread Broadcast Channels
+        
+        http://developers.app.net/docs/resources/channel/lookup/#retrieve-number-of-unread-broadcast-channels"""
+        ep={'url_params': [], 'group': 'channel', 'name': 'getUnreadBroadcastCount', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['users/me/channels/broadcast/num_unread'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/lookup/#retrieve-number-of-unread-broadcast-channels', 'scope': 'messages', 'method': 'GET', 'description': 'Retrieve number of unread Broadcast Channels'}
+        url=self.geturl(ep )
+        return self.genRequest(url, ep, kargs)
+
+    def markBroadcastChannelsReadChannel(self , **kargs):
+        """api.markBroadcastChannelsReadChannel() - Mark all Broadcast Channels as read
+        
+        http://developers.app.net/docs/resources/channel/lookup/#mark-all-broadcast-channels-as-read"""
+        ep={'url_params': [], 'group': 'channel', 'name': 'markBroadcastChannelsRead', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['users/me/channels/broadcast/num_unread'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/lookup/#mark-all-broadcast-channels-as-read', 'scope': 'messages', 'method': 'DELETE', 'description': 'Mark all Broadcast Channels as read'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def updateChannel(self , channel_id, **kargs):
-    	"""api.updateChannel(channel_id) - Update a Channel
+        """api.updateChannel(channel_id) - Update a Channel
         
         http://developers.app.net/docs/resources/channel/lifecycle/#update-a-channel"""
-        ep={u'url_params': [u'channel_id'], u'group': u'channel', u'name': u'update', u'array_params': [], u'data_params': [u'channel'], u'get_params': [u'general_channel'], u'method': u'PUT', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/lifecycle/#update-a-channel', u'url': [u'channels/'], u'scope': u'messages', u'id': u'306', u'description': u'Update a Channel'}
+        ep={'url_params': ['channel_id'], 'group': 'channel', 'name': 'update', 'array_params': [], 'data_params': ['channel'], 'get_params': ['general_channel'], 'url': ['channels/'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/lifecycle/#update-a-channel', 'scope': 'messages', 'method': 'PUT', 'description': 'Update a Channel'}
+        url=self.geturl(ep , channel_id)
+        return self.genRequest(url, ep, kargs)
+
+    def deactivateChannel(self , channel_id, **kargs):
+        """api.deactivateChannel(channel_id) - Deactivate a Channel
+        
+        http://developers.app.net/docs/resources/channel/lifecycle/#deactivate-a-channel"""
+        ep={'url_params': ['channel_id'], 'group': 'channel', 'name': 'deactivate', 'array_params': [], 'data_params': ['channel'], 'get_params': ['general_channel'], 'url': ['channels/'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/lifecycle/#deactivate-a-channel', 'scope': 'messages', 'method': 'DELETE', 'description': 'Deactivate a Channel'}
         url=self.geturl(ep , channel_id)
         return self.genRequest(url, ep, kargs)
 
     def subscribeChannel(self , channel_id, **kargs):
-    	"""api.subscribeChannel(channel_id) - Subscribe to a Channel
+        """api.subscribeChannel(channel_id) - Subscribe to a Channel
         
         http://developers.app.net/docs/resources/channel/subscriptions/#subscribe-to-a-channel"""
-        ep={u'url_params': [u'channel_id'], u'group': u'channel', u'name': u'subscribe', u'array_params': [], u'data_params': [], u'get_params': [u'general_channel'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/subscriptions/#subscribe-to-a-channel', u'url': [u'channels/', u'/subscribe'], u'scope': u'messages', u'id': u'307', u'description': u'Subscribe to a Channel'}
+        ep={'url_params': ['channel_id'], 'group': 'channel', 'name': 'subscribe', 'array_params': [], 'data_params': [], 'get_params': ['general_channel'], 'url': ['channels/', '/subscribe'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/subscriptions/#subscribe-to-a-channel', 'scope': 'messages', 'method': 'POST', 'description': 'Subscribe to a Channel'}
         url=self.geturl(ep , channel_id)
         return self.genRequest(url, ep, kargs)
 
     def unsubscribeChannel(self , channel_id, **kargs):
-    	"""api.unsubscribeChannel(channel_id) - Unsubscribe from a Channel
+        """api.unsubscribeChannel(channel_id) - Unsubscribe from a Channel
         
         http://developers.app.net/docs/resources/channel/subscriptions/#unsubscribe-from-a-channel"""
-        ep={u'url_params': [u'channel_id'], u'group': u'channel', u'name': u'unsubscribe', u'array_params': [], u'data_params': [], u'get_params': [u'general_channel'], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/subscriptions/#unsubscribe-from-a-channel', u'url': [u'channels/', u'/subscribe'], u'scope': u'messages', u'id': u'308', u'description': u'Unsubscribe from a Channel'}
+        ep={'url_params': ['channel_id'], 'group': 'channel', 'name': 'unsubscribe', 'array_params': [], 'data_params': [], 'get_params': ['general_channel'], 'url': ['channels/', '/subscribe'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/subscriptions/#unsubscribe-from-a-channel', 'scope': 'messages', 'method': 'DELETE', 'description': 'Unsubscribe from a Channel'}
         url=self.geturl(ep , channel_id)
         return self.genRequest(url, ep, kargs)
 
     def getSubscribersChannel(self , channel_id, **kargs):
-    	"""api.getSubscribersChannel(channel_id) - Retrieve users subscribed to a Channel
+        """api.getSubscribersChannel(channel_id) - Retrieve users subscribed to a Channel
         
         http://developers.app.net/docs/resources/channel/subscriptions/#retrieve-users-subscribed-to-a-channel"""
-        ep={u'url_params': [u'channel_id'], u'group': u'channel', u'name': u'getSubscribers', u'array_params': [], u'data_params': [], u'get_params': [u'general_channel', u'pagination'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/channel/subscriptions/#retrieve-users-subscribed-to-a-channel', u'url': [u'channels/', u'/subscribers'], u'scope': u'messages', u'id': u'309', u'description': u'Retrieve users subscribed to a Channel'}
+        ep={'url_params': ['channel_id'], 'group': 'channel', 'name': 'getSubscribers', 'array_params': [], 'data_params': [], 'get_params': ['general_channel', 'pagination'], 'url': ['channels/', '/subscribers'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/channel/subscriptions/#retrieve-users-subscribed-to-a-channel', 'scope': 'messages', 'method': 'GET', 'description': 'Retrieve users subscribed to a Channel'}
         url=self.geturl(ep , channel_id)
         return self.genRequest(url, ep, kargs)
 
     def getSubscriberIdsChannel(self , channel_id, **kargs):
-    	"""api.getSubscriberIdsChannel(channel_id) - Retrieve user ids subscribed to a Channel
+        """api.getSubscriberIdsChannel(channel_id) - Retrieve user ids subscribed to a Channel
         
         http://developers.app.net/docs/resources/channel/subscriptions/#retrieve-user-ids-subscribed-to-a-channel"""
-        ep={u'url_params': [u'channel_id'], u'group': u'channel', u'name': u'getSubscriberIds', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/channel/subscriptions/#retrieve-user-ids-subscribed-to-a-channel', u'url': [u'channels/', u'/subscribers/ids'], u'scope': u'messages', u'id': u'310', u'description': u'Retrieve user ids subscribed to a Channel'}
+        ep={'url_params': ['channel_id'], 'group': 'channel', 'name': 'getSubscriberIds', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['channels/', '/subscribers/ids'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/channel/subscriptions/#retrieve-user-ids-subscribed-to-a-channel', 'scope': 'messages', 'method': 'GET', 'description': 'Retrieve user ids subscribed to a Channel'}
         url=self.geturl(ep , channel_id)
         return self.genRequest(url, ep, kargs)
 
     def getSubscriberIdListChannel(self , **kargs):
-    	"""api.getSubscriberIdListChannel(ids=[...]) - Retrieve user ids subscribed to multiple Channels
+        """api.getSubscriberIdListChannel(ids=[...]) - Retrieve user ids subscribed to multiple Channels
         
         http://developers.app.net/docs/resources/channel/subscriptions/#retrieve-user-ids-subscribed-to-a-channel"""
-        ep={u'url_params': [], u'group': u'channel', u'name': u'getSubscriberIdList', u'array_params': [u'channel_ids'], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/channel/subscriptions/#retrieve-user-ids-subscribed-to-a-channel', u'url': [u'channels/subscribers/ids'], u'scope': u'messages', u'id': u'311', u'description': u'Retrieve user ids subscribed to multiple Channels'}
+        ep={'url_params': [], 'group': 'channel', 'name': 'getSubscriberIdList', 'array_params': ['channel_ids'], 'data_params': [], 'get_params': [], 'url': ['channels/subscribers/ids'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/channel/subscriptions/#retrieve-user-ids-subscribed-to-a-channel', 'scope': 'messages', 'method': 'GET', 'description': 'Retrieve user ids subscribed to multiple Channels'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def muteChannel(self , channel_id, **kargs):
-    	"""api.muteChannel(channel_id) - Mute a Channel
+        """api.muteChannel(channel_id) - Mute a Channel
         
         http://developers.app.net/docs/resources/channel/muting/#mute-a-channel"""
-        ep={u'url_params': [u'channel_id'], u'group': u'channel', u'name': u'mute', u'array_params': [], u'data_params': [], u'get_params': [u'general_channel'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/muting/#mute-a-channel', u'url': [u'channels/', u'/mute'], u'scope': u'messages', u'id': u'312', u'description': u'Mute a Channel'}
+        ep={'url_params': ['channel_id'], 'group': 'channel', 'name': 'mute', 'array_params': [], 'data_params': [], 'get_params': ['general_channel'], 'url': ['channels/', '/mute'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/muting/#mute-a-channel', 'scope': 'messages', 'method': 'POST', 'description': 'Mute a Channel'}
         url=self.geturl(ep , channel_id)
         return self.genRequest(url, ep, kargs)
 
     def unmuteChannel(self , channel_id, **kargs):
-    	"""api.unmuteChannel(channel_id) - Unmute a Channel
+        """api.unmuteChannel(channel_id) - Unmute a Channel
         
         http://developers.app.net/docs/resources/channel/muting/#unmute-a-channel"""
-        ep={u'url_params': [u'channel_id'], u'group': u'channel', u'name': u'unmute', u'array_params': [], u'data_params': [], u'get_params': [u'general_channel'], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/muting/#unmute-a-channel', u'url': [u'channels/', u'/mute'], u'scope': u'messages', u'id': u'313', u'description': u'Unmute a Channel'}
+        ep={'url_params': ['channel_id'], 'group': 'channel', 'name': 'unmute', 'array_params': [], 'data_params': [], 'get_params': ['general_channel'], 'url': ['channels/', '/mute'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/muting/#unmute-a-channel', 'scope': 'messages', 'method': 'DELETE', 'description': 'Unmute a Channel'}
         url=self.geturl(ep , channel_id)
         return self.genRequest(url, ep, kargs)
 
     def getMutedChannel(self , **kargs):
-    	"""api.getMutedChannel() - Get current user's muted Channels
+        """api.getMutedChannel() - Get current user's muted Channels
         
         http://developers.app.net/docs/resources/channel/muting/#get-current-users-muted-channels"""
-        ep={u'url_params': [], u'group': u'channel', u'name': u'getMuted', u'array_params': [], u'data_params': [], u'get_params': [u'general_channel'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/muting/#get-current-users-muted-channels', u'url': [u'users/me/channels/muted'], u'scope': u'messages', u'id': u'314', u'description': u"Get current user's muted Channels"}
+        ep={'url_params': [], 'group': 'channel', 'name': 'getMuted', 'array_params': [], 'data_params': [], 'get_params': ['general_channel'], 'url': ['users/me/channels/muted'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/muting/#get-current-users-muted-channels', 'scope': 'messages', 'method': 'GET', 'description': "Get current user's muted Channels"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def searchChannel(self , **kargs):
-    	"""api.searchChannel() - Search for Channels
+        """api.searchChannel() - Search for Channels
         
         http://developers.app.net/docs/resources/channel/search/#search-for-channels"""
-        ep={u'url_params': [], u'group': u'channel', u'name': u'search', u'array_params': [], u'data_params': [], u'get_params': [u'channel_search', u'general_channel'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/channel/search/#search-for-channels', u'url': [u'channels/search'], u'scope': u'public_messages', u'id': u'315', u'description': u'Search for Channels'}
+        ep={'url_params': [], 'group': 'channel', 'name': 'search', 'array_params': [], 'data_params': [], 'get_params': ['channel_search', 'general_channel'], 'url': ['channels/search'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/channel/search/#search-for-channels', 'scope': 'public_messages', 'method': 'GET', 'description': 'Search for Channels'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getChannelMessage(self , channel_id, **kargs):
-    	"""api.getChannelMessage(channel_id) - Retrieve the Messages in a Channel
+        """api.getChannelMessage(channel_id) - Retrieve the Messages in a Channel
         
         http://developers.app.net/docs/resources/message/lifecycle/#retrieve-the-messages-in-a-channel"""
-        ep={u'url_params': [u'channel_id'], u'group': u'message', u'name': u'getChannel', u'array_params': [], u'data_params': [], u'get_params': [u'general_message', u'pagination'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/message/lifecycle/#retrieve-the-messages-in-a-channel', u'url': [u'channels/', u'/messages'], u'scope': u'messages', u'id': u'400', u'description': u'Retrieve the Messages in a Channel'}
+        ep={'url_params': ['channel_id'], 'group': 'message', 'name': 'getChannel', 'array_params': [], 'data_params': [], 'get_params': ['general_message', 'pagination'], 'url': ['channels/', '/messages'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/message/lifecycle/#retrieve-the-messages-in-a-channel', 'scope': 'messages', 'method': 'GET', 'description': 'Retrieve the Messages in a Channel'}
         url=self.geturl(ep , channel_id)
         return self.genRequest(url, ep, kargs)
 
     def createMessage(self , channel_id, **kargs):
-    	"""api.createMessage(channel_id) - Create a Message
+        """api.createMessage(channel_id) - Create a Message
         
         http://developers.app.net/docs/resources/message/lifecycle/#create-a-message"""
-        ep={u'url_params': [u'channel_id'], u'group': u'message', u'name': u'create', u'array_params': [], u'data_params': [u'message'], u'get_params': [u'general_message'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/message/lifecycle/#create-a-message', u'url': [u'channels/', u'/messages'], u'scope': u'messages', u'id': u'401', u'description': u'Create a Message'}
+        ep={'url_params': ['channel_id'], 'group': 'message', 'name': 'create', 'array_params': [], 'data_params': ['message'], 'get_params': ['general_message'], 'url': ['channels/', '/messages'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/message/lifecycle/#create-a-message', 'scope': 'messages', 'method': 'POST', 'description': 'Create a Message'}
         url=self.geturl(ep , channel_id)
         return self.genRequest(url, ep, kargs)
 
     def getMessage(self , channel_id, message_id, **kargs):
-    	"""api.getMessage(channel_id, message_id) - Retrieve a Message
+        """api.getMessage(channel_id, message_id) - Retrieve a Message
         
         http://developers.app.net/docs/resources/message/lookup/#retrieve-a-message"""
-        ep={u'url_params': [u'channel_id', u'message_id'], u'group': u'message', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'general_message'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/message/lookup/#retrieve-a-message', u'url': [u'channels/', u'/messages/'], u'scope': u'messages', u'id': u'402', u'description': u'Retrieve a Message'}
+        ep={'url_params': ['channel_id', 'message_id'], 'group': 'message', 'name': 'get', 'array_params': [], 'data_params': [], 'get_params': ['general_message'], 'url': ['channels/', '/messages/'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/message/lookup/#retrieve-a-message', 'scope': 'messages', 'method': 'GET', 'description': 'Retrieve a Message'}
         url=self.geturl(ep , channel_id, message_id)
         return self.genRequest(url, ep, kargs)
 
     def getListMessage(self , **kargs):
-    	"""api.getListMessage(ids=[...]) - Retrieve multiple Messages
+        """api.getListMessage(ids=[...]) - Retrieve multiple Messages
         
         http://developers.app.net/docs/resources/message/lookup/#retrieve-multiple-messages"""
-        ep={u'url_params': [], u'group': u'message', u'name': u'getList', u'array_params': [u'message_ids'], u'data_params': [], u'get_params': [u'general_message'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/message/lookup/#retrieve-multiple-messages', u'url': [u'channels/messages'], u'scope': u'messages', u'id': u'403', u'description': u'Retrieve multiple Messages'}
+        ep={'url_params': [], 'group': 'message', 'name': 'getList', 'array_params': ['message_ids'], 'data_params': [], 'get_params': ['general_message'], 'url': ['channels/messages'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/message/lookup/#retrieve-multiple-messages', 'scope': 'messages', 'method': 'GET', 'description': 'Retrieve multiple Messages'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getUserMessage(self , **kargs):
-    	"""api.getUserMessage() - Retrieve my Messages
+        """api.getUserMessage() - Retrieve my Messages
         
         http://developers.app.net/docs/resources/message/lookup/#retrieve-my-messages"""
-        ep={u'url_params': [], u'group': u'message', u'name': u'getUser', u'array_params': [], u'data_params': [], u'get_params': [u'general_message'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/message/lookup/#retrieve-my-messages', u'url': [u'users/me/messages'], u'scope': u'messages', u'id': u'404', u'description': u'Retrieve my Messages'}
+        ep={'url_params': [], 'group': 'message', 'name': 'getUser', 'array_params': [], 'data_params': [], 'get_params': ['general_message'], 'url': ['users/me/messages'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/message/lookup/#retrieve-my-messages', 'scope': 'messages', 'method': 'GET', 'description': 'Retrieve my Messages'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def destroyMessage(self , channel_id, message_id, **kargs):
-    	"""api.destroyMessage(channel_id, message_id) - Delete a Message
+        """api.destroyMessage(channel_id, message_id) - Delete a Message
         
         http://developers.app.net/docs/resources/message/lifecycle/#delete-a-message"""
-        ep={u'url_params': [u'channel_id', u'message_id'], u'group': u'message', u'name': u'destroy', u'array_params': [], u'data_params': [], u'get_params': [u'general_message'], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/message/lifecycle/#delete-a-message', u'url': [u'channels/', u'/messages/'], u'scope': u'messages', u'id': u'405', u'description': u'Delete a Message'}
+        ep={'url_params': ['channel_id', 'message_id'], 'group': 'message', 'name': 'destroy', 'array_params': [], 'data_params': [], 'get_params': ['general_message'], 'url': ['channels/', '/messages/'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/message/lifecycle/#delete-a-message', 'scope': 'messages', 'method': 'DELETE', 'description': 'Delete a Message'}
         url=self.geturl(ep , channel_id, message_id)
         return self.genRequest(url, ep, kargs)
 
     def createFile(self , **kargs):
-    	"""api.createFile() - Create a File
+        """api.createFile() - Create a File
         
         http://developers.app.net/docs/resources/file/lifecycle/#create-a-file"""
-        ep={u'url_params': [], u'group': u'file', u'name': u'create', u'array_params': [], u'data_params': [u'file'], u'get_params': [u'general_file'], u'method': u'POST-RAW', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/file/lifecycle/#create-a-file', u'url': [u'files'], u'scope': u'files', u'id': u'500', u'description': u'Create a File'}
+        ep={'url_params': [], 'group': 'file', 'name': 'create', 'array_params': [], 'data_params': ['file'], 'get_params': ['general_file'], 'url': ['files'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/file/lifecycle/#create-a-file', 'scope': 'files', 'method': 'POST-RAW', 'description': 'Create a File'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def createPlaceholderFile(self , **kargs):
-    	"""api.createPlaceholderFile() - Create a File Placeholder
+        """api.createPlaceholderFile() - Create a File Placeholder
         
         http://developers.app.net/docs/resources/file/lifecycle/#create-a-file"""
-        ep={u'url_params': [], u'group': u'file', u'name': u'createPlaceholder', u'array_params': [], u'data_params': [u'file'], u'get_params': [u'general_file'], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/file/lifecycle/#create-a-file', u'url': [u'files'], u'scope': u'files', u'id': u'501', u'description': u'Create a File Placeholder'}
+        ep={'url_params': [], 'group': 'file', 'name': 'createPlaceholder', 'array_params': [], 'data_params': ['file'], 'get_params': ['general_file'], 'url': ['files'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/file/lifecycle/#create-a-file', 'scope': 'files', 'method': 'POST', 'description': 'Create a File Placeholder'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getFile(self , file_id, **kargs):
-    	"""api.getFile(file_id) - Retrieve a File
+        """api.getFile(file_id) - Retrieve a File
         
         http://developers.app.net/docs/resources/file/lookup/#retrieve-a-file"""
-        ep={u'url_params': [u'file_id'], u'group': u'file', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'general_file'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/file/lookup/#retrieve-a-file', u'url': [u'files/'], u'scope': u'basic', u'id': u'502', u'description': u'Retrieve a File'}
+        ep={'url_params': ['file_id'], 'group': 'file', 'name': 'get', 'array_params': [], 'data_params': [], 'get_params': ['general_file'], 'url': ['files/'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/file/lookup/#retrieve-a-file', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve a File'}
         url=self.geturl(ep , file_id)
         return self.genRequest(url, ep, kargs)
 
     def getListFile(self , **kargs):
-    	"""api.getListFile(ids=[...]) - Retrieve multiple Files
+        """api.getListFile(ids=[...]) - Retrieve multiple Files
         
         http://developers.app.net/docs/resources/file/lookup/#retrieve-multiple-files"""
-        ep={u'url_params': [], u'group': u'file', u'name': u'getList', u'array_params': [u'file_ids'], u'data_params': [], u'get_params': [u'general_file'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/file/lookup/#retrieve-multiple-files', u'url': [u'files'], u'scope': u'files', u'id': u'503', u'description': u'Retrieve multiple Files'}
+        ep={'url_params': [], 'group': 'file', 'name': 'getList', 'array_params': ['file_ids'], 'data_params': [], 'get_params': ['general_file'], 'url': ['files'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/file/lookup/#retrieve-multiple-files', 'scope': 'files', 'method': 'GET', 'description': 'Retrieve multiple Files'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def destroyFile(self , file_id, **kargs):
-    	"""api.destroyFile(file_id) - Delete a File
+        """api.destroyFile(file_id) - Delete a File
         
         http://developers.app.net/docs/resources/file/lifecycle/#delete-a-file"""
-        ep={u'url_params': [u'file_id'], u'group': u'file', u'name': u'destroy', u'array_params': [], u'data_params': [], u'get_params': [u'general_file'], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/file/lifecycle/#delete-a-file', u'url': [u'files/'], u'scope': u'files', u'id': u'504', u'description': u'Delete a File'}
+        ep={'url_params': ['file_id'], 'group': 'file', 'name': 'destroy', 'array_params': [], 'data_params': [], 'get_params': ['general_file'], 'url': ['files/'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/file/lifecycle/#delete-a-file', 'scope': 'files', 'method': 'DELETE', 'description': 'Delete a File'}
         url=self.geturl(ep , file_id)
         return self.genRequest(url, ep, kargs)
 
     def getUserFile(self , **kargs):
-    	"""api.getUserFile() - Retrieve my Files
+        """api.getUserFile() - Retrieve my Files
         
         http://developers.app.net/docs/resources/file/lookup/#retrieve-my-files"""
-        ep={u'url_params': [], u'group': u'file', u'name': u'getUser', u'array_params': [], u'data_params': [], u'get_params': [u'general_file', u'pagination'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/file/lookup/#retrieve-my-files', u'url': [u'users/me/files'], u'scope': u'files', u'id': u'505', u'description': u'Retrieve my Files'}
+        ep={'url_params': [], 'group': 'file', 'name': 'getUser', 'array_params': [], 'data_params': [], 'get_params': ['general_file', 'pagination'], 'url': ['users/me/files'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/file/lookup/#retrieve-my-files', 'scope': 'files', 'method': 'GET', 'description': 'Retrieve my Files'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def updateFile(self , file_id, **kargs):
-    	"""api.updateFile(file_id) - Update a File
+        """api.updateFile(file_id) - Update a File
         
         http://developers.app.net/docs/resources/file/lifecycle/#update-a-file"""
-        ep={u'url_params': [u'file_id'], u'group': u'file', u'name': u'update', u'array_params': [], u'data_params': [u'file'], u'get_params': [u'general_file'], u'method': u'PUT', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/file/lifecycle/#update-a-file', u'url': [u'files/'], u'scope': u'files', u'id': u'506', u'description': u'Update a File'}
+        ep={'url_params': ['file_id'], 'group': 'file', 'name': 'update', 'array_params': [], 'data_params': ['file'], 'get_params': ['general_file'], 'url': ['files/'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/file/lifecycle/#update-a-file', 'scope': 'files', 'method': 'PUT', 'description': 'Update a File'}
         url=self.geturl(ep , file_id)
         return self.genRequest(url, ep, kargs)
 
     def getContentFile(self , file_id, **kargs):
-    	"""api.getContentFile(file_id) - Get File content
+        """api.getContentFile(file_id) - Get File content
         
         http://developers.app.net/docs/resources/file/content/#get-file-content"""
-        ep={u'url_params': [u'file_id'], u'group': u'file', u'name': u'getContent', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/file/content/#get-file-content', u'url': [u'files/', u'/content'], u'scope': u'files', u'id': u'507', u'description': u'Get File content'}
+        ep={'url_params': ['file_id'], 'group': 'file', 'name': 'getContent', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['files/', '/content'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/file/content/#get-file-content', 'scope': 'files', 'method': 'GET', 'description': 'Get File content'}
         url=self.geturl(ep , file_id)
         return self.genRequest(url, ep, kargs)
 
     def setContentFile(self , file_id, **kargs):
-    	"""api.setContentFile(file_id) - Set File content
+        """api.setContentFile(file_id) - Set File content
         
         http://developers.app.net/docs/resources/file/content/#set-file-content"""
-        ep={u'url_params': [u'file_id'], u'group': u'file', u'name': u'setContent', u'array_params': [], u'data_params': [u'content'], u'get_params': [], u'method': u'PUT', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/file/content/#set-file-content', u'url': [u'files/', u'/content'], u'scope': u'files', u'id': u'508', u'description': u'Set File content'}
+        ep={'url_params': ['file_id'], 'group': 'file', 'name': 'setContent', 'array_params': [], 'data_params': ['content'], 'get_params': [], 'url': ['files/', '/content'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/file/content/#set-file-content', 'scope': 'files', 'method': 'PUT', 'description': 'Set File content'}
         url=self.geturl(ep , file_id)
         return self.genRequest(url, ep, kargs)
 
     def createAppStream(self , **kargs):
-    	"""api.createAppStream() - Create a Stream
+        """api.createAppStream() - Create a Stream
         
         http://developers.app.net/docs/resources/stream/lifecycle/#create-a-stream"""
-        ep={u'url_params': [], u'group': u'AppStream', u'name': u'create', u'array_params': [], u'data_params': [u'stream'], u'get_params': [], u'method': u'POST', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#create-a-stream', u'url': [u'streams'], u'scope': u'basic', u'id': u'600', u'description': u'Create a Stream'}
+        ep={'url_params': [], 'group': 'AppStream', 'name': 'create', 'array_params': [], 'data_params': ['stream'], 'get_params': [], 'url': ['streams'], 'token': 'App', 'link': 'http://developers.app.net/docs/resources/stream/lifecycle/#create-a-stream', 'scope': 'basic', 'method': 'POST', 'description': 'Create a Stream'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getAppStream(self , stream_id, **kargs):
-    	"""api.getAppStream(stream_id) - Retrieve a Stream
+        """api.getAppStream(stream_id) - Retrieve a Stream
         
         http://developers.app.net/docs/resources/stream/lifecycle/#retrieve-a-stream"""
-        ep={u'url_params': [u'stream_id'], u'group': u'AppStream', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#retrieve-a-stream', u'url': [u'streams/'], u'scope': u'basic', u'id': u'601', u'description': u'Retrieve a Stream'}
+        ep={'url_params': ['stream_id'], 'group': 'AppStream', 'name': 'get', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['streams/'], 'token': 'App', 'link': 'http://developers.app.net/docs/resources/stream/lifecycle/#retrieve-a-stream', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve a Stream'}
         url=self.geturl(ep , stream_id)
         return self.genRequest(url, ep, kargs)
 
     def updateAppStream(self , stream_id, **kargs):
-    	"""api.updateAppStream(stream_id) - Update a Stream
+        """api.updateAppStream(stream_id) - Update a Stream
         
         http://developers.app.net/docs/resources/stream/lifecycle/#update-a-stream"""
-        ep={u'url_params': [u'stream_id'], u'group': u'AppStream', u'name': u'update', u'array_params': [], u'data_params': [u'stream'], u'get_params': [], u'method': u'PUT', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#update-a-stream', u'url': [u'streams/'], u'scope': u'basic', u'id': u'602', u'description': u'Update a Stream'}
+        ep={'url_params': ['stream_id'], 'group': 'AppStream', 'name': 'update', 'array_params': [], 'data_params': ['stream'], 'get_params': [], 'url': ['streams/'], 'token': 'App', 'link': 'http://developers.app.net/docs/resources/stream/lifecycle/#update-a-stream', 'scope': 'basic', 'method': 'PUT', 'description': 'Update a Stream'}
         url=self.geturl(ep , stream_id)
         return self.genRequest(url, ep, kargs)
 
     def destroyAppStream(self , stream_id, **kargs):
-    	"""api.destroyAppStream(stream_id) - Delete a Stream
+        """api.destroyAppStream(stream_id) - Delete a Stream
         
         http://developers.app.net/docs/resources/stream/lifecycle/#delete-a-stream"""
-        ep={u'url_params': [u'stream_id'], u'group': u'AppStream', u'name': u'destroy', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#delete-a-stream', u'url': [u'streams/'], u'scope': u'basic', u'id': u'603', u'description': u'Delete a Stream'}
+        ep={'url_params': ['stream_id'], 'group': 'AppStream', 'name': 'destroy', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['streams/'], 'token': 'App', 'link': 'http://developers.app.net/docs/resources/stream/lifecycle/#delete-a-stream', 'scope': 'basic', 'method': 'DELETE', 'description': 'Delete a Stream'}
         url=self.geturl(ep , stream_id)
         return self.genRequest(url, ep, kargs)
 
     def getAllAppStream(self , **kargs):
-    	"""api.getAllAppStream() - Retrieve all Streams for the current Token
+        """api.getAllAppStream() - Retrieve all Streams for the current Token
         
         http://developers.app.net/docs/resources/stream/lifecycle/#get-current-tokens-streams"""
-        ep={u'url_params': [], u'group': u'AppStream', u'name': u'getAll', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#get-current-tokens-streams', u'url': [u'streams'], u'scope': u'basic', u'id': u'604', u'description': u'Retrieve all Streams for the current Token'}
+        ep={'url_params': [], 'group': 'AppStream', 'name': 'getAll', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['streams'], 'token': 'App', 'link': 'http://developers.app.net/docs/resources/stream/lifecycle/#get-current-tokens-streams', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve all Streams for the current Token'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def destroyAllAppStream(self , **kargs):
-    	"""api.destroyAllAppStream() - Delete all Streams for the current Token
+        """api.destroyAllAppStream() - Delete all Streams for the current Token
         
         http://developers.app.net/docs/resources/stream/lifecycle/#delete-all-of-the-current-users-streams"""
-        ep={u'url_params': [], u'group': u'AppStream', u'name': u'destroyAll', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/stream/lifecycle/#delete-all-of-the-current-users-streams', u'url': [u'streams'], u'scope': u'basic', u'id': u'605', u'description': u'Delete all Streams for the current Token'}
+        ep={'url_params': [], 'group': 'AppStream', 'name': 'destroyAll', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['streams'], 'token': 'App', 'link': 'http://developers.app.net/docs/resources/stream/lifecycle/#delete-all-of-the-current-users-streams', 'scope': 'basic', 'method': 'DELETE', 'description': 'Delete all Streams for the current Token'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def destroyUserStream(self , connection_id, **kargs):
-    	"""api.destroyUserStream(connection_id) - Delete a User Stream
+        """api.destroyUserStream(connection_id) - Delete a User Stream
         
         http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream"""
-        ep={u'url_params': [u'connection_id'], u'group': u'UserStream', u'name': u'destroy', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'user', u'link': u'http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream', u'url': [u'streams/me/streams/'], u'scope': u'basic', u'id': u'700', u'description': u'Delete a User Stream'}
+        ep={'url_params': ['connection_id'], 'group': 'UserStream', 'name': 'destroy', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['streams/me/streams/'], 'token': 'user', 'link': 'http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream', 'scope': 'basic', 'method': 'DELETE', 'description': 'Delete a User Stream'}
         url=self.geturl(ep , connection_id)
         return self.genRequest(url, ep, kargs)
 
     def destroySubscriptionUserStream(self , connection_id, subscription_id, **kargs):
-    	"""api.destroySubscriptionUserStream(connection_id, subscription_id) - Delete a User Stream Subscription
+        """api.destroySubscriptionUserStream(connection_id, subscription_id) - Delete a User Stream Subscription
         
         http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream-subscription"""
-        ep={u'url_params': [u'connection_id', u'subscription_id'], u'group': u'UserStream', u'name': u'destroySubscription', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'user', u'link': u'http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream-subscription', u'url': [u'streams/me/streams/'], u'scope': u'basic', u'id': u'701', u'description': u'Delete a User Stream Subscription'}
+        ep={'url_params': ['connection_id', 'subscription_id'], 'group': 'UserStream', 'name': 'destroySubscription', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['streams/me/streams/'], 'token': 'user', 'link': 'http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream-subscription', 'scope': 'basic', 'method': 'DELETE', 'description': 'Delete a User Stream Subscription'}
         url=self.geturl(ep , connection_id, subscription_id)
         return self.genRequest(url, ep, kargs)
 
     def createFilter(self , **kargs):
-    	"""api.createFilter() - Create a Filter
+        """api.createFilter() - Create a Filter
         
         http://developers.app.net/docs/resources/filter/lifecycle/#create-a-filter"""
-        ep={u'url_params': [], u'group': u'filter', u'name': u'create', u'array_params': [], u'data_params': [u'filter'], u'get_params': [], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#create-a-filter', u'url': [u'filters'], u'scope': u'basic', u'id': u'800', u'description': u'Create a Filter'}
+        ep={'url_params': [], 'group': 'filter', 'name': 'create', 'array_params': [], 'data_params': ['filter'], 'get_params': [], 'url': ['filters'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/filter/lifecycle/#create-a-filter', 'scope': 'basic', 'method': 'POST', 'description': 'Create a Filter'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getFilter(self , filter_id, **kargs):
-    	"""api.getFilter(filter_id) - Retrieve a Filter
+        """api.getFilter(filter_id) - Retrieve a Filter
         
         http://developers.app.net/docs/resources/filter/lifecycle/#retrieve-a-filter"""
-        ep={u'url_params': [u'filter_id'], u'group': u'filter', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#retrieve-a-filter', u'url': [u'filters/'], u'scope': u'basic', u'id': u'801', u'description': u'Retrieve a Filter'}
+        ep={'url_params': ['filter_id'], 'group': 'filter', 'name': 'get', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['filters/'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/filter/lifecycle/#retrieve-a-filter', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve a Filter'}
         url=self.geturl(ep , filter_id)
         return self.genRequest(url, ep, kargs)
 
     def updateFilter(self , filter_id, **kargs):
-    	"""api.updateFilter(filter_id) - Update a Filter
+        """api.updateFilter(filter_id) - Update a Filter
         
         http://developers.app.net/docs/resources/filter/lifecycle/#update-a-filter"""
-        ep={u'url_params': [u'filter_id'], u'group': u'filter', u'name': u'update', u'array_params': [], u'data_params': [u'filter'], u'get_params': [], u'method': u'PUT', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#update-a-filter', u'url': [u'filters/'], u'scope': u'basic', u'id': u'802', u'description': u'Update a Filter'}
+        ep={'url_params': ['filter_id'], 'group': 'filter', 'name': 'update', 'array_params': [], 'data_params': ['filter'], 'get_params': [], 'url': ['filters/'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/filter/lifecycle/#update-a-filter', 'scope': 'basic', 'method': 'PUT', 'description': 'Update a Filter'}
         url=self.geturl(ep , filter_id)
         return self.genRequest(url, ep, kargs)
 
     def destroyFilter(self , filter_id, **kargs):
-    	"""api.destroyFilter(filter_id) - Delete a Filter
+        """api.destroyFilter(filter_id) - Delete a Filter
         
         http://developers.app.net/docs/resources/filter/lifecycle/#delete-a-filter"""
-        ep={u'url_params': [u'filter_id'], u'group': u'filter', u'name': u'destroy', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#delete-a-filter', u'url': [u'filters/'], u'scope': u'basic', u'id': u'803', u'description': u'Delete a Filter'}
+        ep={'url_params': ['filter_id'], 'group': 'filter', 'name': 'destroy', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['filters/'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/filter/lifecycle/#delete-a-filter', 'scope': 'basic', 'method': 'DELETE', 'description': 'Delete a Filter'}
         url=self.geturl(ep , filter_id)
         return self.genRequest(url, ep, kargs)
 
     def getUserFilter(self , **kargs):
-    	"""api.getUserFilter() - Get the current User's Filters
+        """api.getUserFilter() - Get the current User's Filters
         
         http://developers.app.net/docs/resources/filter/lifecycle/#get-current-users-filters"""
-        ep={u'url_params': [], u'group': u'filter', u'name': u'getUser', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#get-current-users-filters', u'url': [u'filters'], u'scope': u'basic', u'id': u'804', u'description': u"Get the current User's Filters"}
+        ep={'url_params': [], 'group': 'filter', 'name': 'getUser', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['filters'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/filter/lifecycle/#get-current-users-filters', 'scope': 'basic', 'method': 'GET', 'description': "Get the current User's Filters"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def destroyUserFilter(self , **kargs):
-    	"""api.destroyUserFilter() - Delete the current User's Filters
+        """api.destroyUserFilter() - Delete the current User's Filters
         
         http://developers.app.net/docs/resources/filter/lifecycle/#delete-all-of-the-current-users-filters"""
-        ep={u'url_params': [], u'group': u'filter', u'name': u'destroyUser', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'DELETE', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/filter/lifecycle/#delete-all-of-the-current-users-filters', u'url': [u'filters'], u'scope': u'basic', u'id': u'805', u'description': u"Delete the current User's Filters"}
+        ep={'url_params': [], 'group': 'filter', 'name': 'destroyUser', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['filters'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/filter/lifecycle/#delete-all-of-the-current-users-filters', 'scope': 'basic', 'method': 'DELETE', 'description': "Delete the current User's Filters"}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getInteraction(self , **kargs):
-    	"""api.getInteraction() - Retrieve Interactions with the current User
+        """api.getInteraction() - Retrieve Interactions with the current User
         
         http://developers.app.net/docs/resources/interaction/"""
-        ep={u'url_params': [], u'group': u'interaction', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'pagination'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/interaction/', u'url': [u'users/me/interactions'], u'scope': u'basic', u'id': u'900', u'description': u'Retrieve Interactions with the current User'}
+        ep={'url_params': [], 'group': 'interaction', 'name': 'get', 'array_params': [], 'data_params': [], 'get_params': ['pagination'], 'url': ['users/me/interactions'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/interaction/', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve Interactions with the current User'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def updateMarker(self , **kargs):
-    	"""api.updateMarker() - Update a Stream Marker
+        """api.updateMarker() - Update a Stream Marker
         
         http://developers.app.net/docs/resources/stream-marker/#update-a-stream-marker"""
-        ep={u'url_params': [], u'group': u'marker', u'name': u'update', u'array_params': [], u'data_params': [u'marker'], u'get_params': [], u'method': u'POST', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/stream-marker/#update-a-stream-marker', u'url': [u'posts/marker'], u'scope': u'basic', u'id': u'1000', u'description': u'Update a Stream Marker'}
+        ep={'url_params': [], 'group': 'marker', 'name': 'update', 'array_params': [], 'data_params': ['marker'], 'get_params': [], 'url': ['posts/marker'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/stream-marker/#update-a-stream-marker', 'scope': 'basic', 'method': 'POST', 'description': 'Update a Stream Marker'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def processText(self , **kargs):
-    	"""api.processText() - Process text
+        """api.processText() - Process text
         
         http://developers.app.net/docs/resources/text-processor/"""
-        ep={u'url_params': [], u'group': u'text', u'name': u'process', u'array_params': [], u'data_params': [u'post_or_message'], u'get_params': [], u'method': u'POST', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/text-processor/', u'url': [u'text/process'], u'scope': u'basic', u'id': u'1100', u'description': u'Process text'}
+        ep={'url_params': [], 'group': 'text', 'name': 'process', 'array_params': [], 'data_params': ['post_or_message'], 'get_params': [], 'url': ['text/process'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/text-processor/', 'scope': 'basic', 'method': 'POST', 'description': 'Process text'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getToken(self , **kargs):
-    	"""api.getToken() - Retrieve the current token
+        """api.getToken() - Retrieve the current token
         
         http://developers.app.net/docs/resources/token/#retrieve-current-token"""
-        ep={u'url_params': [], u'group': u'token', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/token/#retrieve-current-token', u'url': [u'token'], u'scope': u'basic', u'id': u'1200', u'description': u'Retrieve the current token'}
+        ep={'url_params': [], 'group': 'token', 'name': 'get', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['token'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/token/#retrieve-current-token', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve the current token'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getAuthorizedIdsToken(self , **kargs):
-    	"""api.getAuthorizedIdsToken() - Retrieve authorized User IDs for an app
+        """api.getAuthorizedIdsToken() - Retrieve authorized User IDs for an app
         
         http://developers.app.net/docs/resources/token/#retrieve-authorized-user-ids-for-an-app"""
-        ep={u'url_params': [], u'group': u'token', u'name': u'getAuthorizedIds', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/token/#retrieve-authorized-user-ids-for-an-app', u'url': [u'tokens/user_ids'], u'scope': u'basic', u'id': u'1201', u'description': u'Retrieve authorized User IDs for an app'}
+        ep={'url_params': [], 'group': 'token', 'name': 'getAuthorizedIds', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['tokens/user_ids'], 'token': 'App', 'link': 'http://developers.app.net/docs/resources/token/#retrieve-authorized-user-ids-for-an-app', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve authorized User IDs for an app'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getAuthorizedToken(self , **kargs):
-    	"""api.getAuthorizedToken() - Retrieve authorized User tokens for an app
+        """api.getAuthorizedToken() - Retrieve authorized User tokens for an app
         
         http://developers.app.net/docs/resources/token/#retrieve-authorized-user-tokens-for-an-app"""
-        ep={u'url_params': [], u'group': u'token', u'name': u'getAuthorized', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'App', u'link': u'http://developers.app.net/docs/resources/token/#retrieve-authorized-user-tokens-for-an-app', u'url': [u'apps/me/token'], u'scope': u'basic', u'id': u'1202', u'description': u'Retrieve authorized User tokens for an app'}
+        ep={'url_params': [], 'group': 'token', 'name': 'getAuthorized', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['apps/me/token'], 'token': 'App', 'link': 'http://developers.app.net/docs/resources/token/#retrieve-authorized-user-tokens-for-an-app', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve authorized User tokens for an app'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getPlace(self , factual_id, **kargs):
-    	"""api.getPlace(factual_id) - Retrieve a Place
+        """api.getPlace(factual_id) - Retrieve a Place
         
         http://developers.app.net/docs/resources/place/#retrieve-a-place"""
-        ep={u'url_params': [u'factual_id'], u'group': u'place', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'Any', u'link': u'http://developers.app.net/docs/resources/place/#retrieve-a-place', u'url': [u'places/'], u'scope': u'basic', u'id': u'1300', u'description': u'Retrieve a Place'}
+        ep={'url_params': ['factual_id'], 'group': 'place', 'name': 'get', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['places/'], 'token': 'Any', 'link': 'http://developers.app.net/docs/resources/place/#retrieve-a-place', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve a Place'}
         url=self.geturl(ep , factual_id)
         return self.genRequest(url, ep, kargs)
 
     def searchPlace(self , **kargs):
-    	"""api.searchPlace() - Search for Places
+        """api.searchPlace() - Search for Places
         
         http://developers.app.net/docs/resources/place/#search-for-a-place"""
-        ep={u'url_params': [], u'group': u'place', u'name': u'search', u'array_params': [], u'data_params': [], u'get_params': [u'place_search'], u'method': u'GET', u'token': u'User', u'link': u'http://developers.app.net/docs/resources/place/#search-for-a-place', u'url': [u'places/search'], u'scope': u'basic', u'id': u'1301', u'description': u'Search for Places'}
+        ep={'url_params': [], 'group': 'place', 'name': 'search', 'array_params': [], 'data_params': [], 'get_params': ['place_search'], 'url': ['places/search'], 'token': 'User', 'link': 'http://developers.app.net/docs/resources/place/#search-for-a-place', 'scope': 'basic', 'method': 'GET', 'description': 'Search for Places'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def showExplore(self , **kargs):
-    	"""api.showExplore() - Retrieve all Explore Streams
+        """api.showExplore() - Retrieve all Explore Streams
         
         http://developers.app.net/docs/resources/explore/#retrieve-all-explore-streams"""
-        ep={u'url_params': [], u'group': u'explore', u'name': u'show', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/explore/#retrieve-all-explore-streams', u'url': [u'posts/stream/explore'], u'scope': u'basic', u'id': u'1400', u'description': u'Retrieve all Explore Streams'}
+        ep={'url_params': [], 'group': 'explore', 'name': 'show', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['posts/stream/explore'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/explore/#retrieve-all-explore-streams', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve all Explore Streams'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
 
     def getExplore(self , slug, **kargs):
-    	"""api.getExplore(slug) - Retrieve an Explore Stream
+        """api.getExplore(slug) - Retrieve an Explore Stream
         
         http://developers.app.net/docs/resources/explore/#retrieve-an-explore-stream"""
-        ep={u'url_params': [u'slug'], u'group': u'explore', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [u'pagination'], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/explore/#retrieve-an-explore-stream', u'url': [u'posts/stream/explore/'], u'scope': u'basic', u'id': u'1401', u'description': u'Retrieve an Explore Stream'}
+        ep={'url_params': ['slug'], 'group': 'explore', 'name': 'get', 'array_params': [], 'data_params': [], 'get_params': ['pagination'], 'url': ['posts/stream/explore/'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/explore/#retrieve-an-explore-stream', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve an Explore Stream'}
         url=self.geturl(ep , slug)
         return self.genRequest(url, ep, kargs)
 
     def getConfig(self , **kargs):
-    	"""api.getConfig() - Retrieve the Configuration Object
+        """api.getConfig() - Retrieve the Configuration Object
         
         http://developers.app.net/docs/resources/config/#retrieve-the-configuration-object"""
-        ep={u'url_params': [], u'group': u'config', u'name': u'get', u'array_params': [], u'data_params': [], u'get_params': [], u'method': u'GET', u'token': u'None', u'link': u'http://developers.app.net/docs/resources/config/#retrieve-the-configuration-object', u'url': [u'config/'], u'scope': u'basic', u'id': u'1500', u'description': u'Retrieve the Configuration Object'}
+        ep={'url_params': [], 'group': 'config', 'name': 'get', 'array_params': [], 'data_params': [], 'get_params': [], 'url': ['config/'], 'token': 'None', 'link': 'http://developers.app.net/docs/resources/config/#retrieve-the-configuration-object', 'scope': 'basic', 'method': 'GET', 'description': 'Retrieve the Configuration Object'}
         url=self.geturl(ep )
         return self.genRequest(url, ep, kargs)
