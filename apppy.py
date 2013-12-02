@@ -278,7 +278,7 @@ Note that this sets access_token but doesn't save it."""
                 if i > 0 or self.gimme_429:
                     r.raise_for_status()
                     return {} # shouldn't get here. This just in case...
-                time.sleep(float(r.header['RetryAfter']))
+                time.sleep(float(r.headers['RetryAfter']))
                 # repeat the call
                 continue
 
